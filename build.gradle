@@ -86,6 +86,9 @@ dependencies {
     implementation "com.google.firebase:firebase-admin:9.0.0"
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.mockito:mockito-core:3.+"
+
+    //Rabbit
+    implementation "com.rabbitmq:amqp-client:5.15.0"
 }
 
 task copyDependencies(type: Copy) {

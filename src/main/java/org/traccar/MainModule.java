@@ -34,6 +34,7 @@ import org.traccar.broadcast.NullBroadcastService;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
 import org.traccar.database.LdapProvider;
+import org.traccar.database.RabbitManager;
 import org.traccar.database.StatisticsManager;
 import org.traccar.geocoder.AddressFormat;
 import org.traccar.geocoder.BanGeocoder;
@@ -334,6 +335,15 @@ public class MainModule extends AbstractModule {
         VelocityEngine velocityEngine = new VelocityEngine();
         velocityEngine.init(properties);
         return velocityEngine;
+    }
+
+    @Singleton
+    @Provides
+    public static RabbitManager provideRabbitManager(Config config, ObjectMapper objectMapper, CacheManager cacheManager) throws IOException {
+        if (config.hasKey(Keys.RABBIT_URL)) {
+            return new RabbitManager(config, objectMapper, cacheManager);
+        }
+        return null;
     }
 
 }

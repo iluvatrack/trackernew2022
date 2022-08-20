@@ -1598,4 +1598,11 @@ public final class Keys {
             "broadcast.port",
             List.of(KeyType.CONFIG));
 
+    /**
+     * RABBIT URL.
+     */
+    public static final ConfigKey<String> RABBIT_URL = new StringConfigKey(
+            "rabbit.url",
+            List.of(KeyType.CONFIG));
+
 }
