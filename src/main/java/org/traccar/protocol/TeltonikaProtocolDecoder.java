@@ -244,7 +244,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
                 p.set(Position.KEY_DRIVER_UNIQUE_ID, String.format("%016X", driverUniqueId));
             }
         });
-        register(80, null, (p, b) -> p.set("dataMode", b.readUnsignedByte()));
+        register(80, fmbXXX, (p, b) -> p.set("dataMode", b.readUnsignedByte()));
         register(90, null, (p, b) -> p.set(Position.KEY_DOOR, b.readUnsignedShort()));
         register(115, fmbXXX, (p, b) -> p.set(Position.KEY_COOLANT_TEMP, b.readShort() * 0.1));
         register(179, null, (p, b) -> p.set(Position.PREFIX_OUT + 1, b.readUnsignedByte() > 0));
@@ -253,8 +253,8 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         register(182, null, (p, b) -> p.set(Position.KEY_HDOP, b.readUnsignedShort() * 0.1));
         register(199, null, (p, b) -> p.set(Position.KEY_ODOMETER_TRIP, b.readUnsignedInt()));
         register(200, fmbXXX, (p, b) -> p.set("sleepMode", b.readUnsignedByte()));
-        register(205, null, (p, b) -> p.set("cid", b.readUnsignedShort()));
-        register(206, null, (p, b) -> p.set("lac", b.readUnsignedShort()));
+        register(205, fmbXXX, (p, b) -> p.set("cid", b.readUnsignedShort()));
+        register(206, fmbXXX, (p, b) -> p.set("lac", b.readUnsignedShort()));
         register(236, null, (p, b) -> {
             p.set(Position.KEY_ALARM, b.readUnsignedByte() > 0 ? Position.ALARM_GENERAL : null);
         });
