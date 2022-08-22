@@ -83,16 +83,12 @@ public class DeviceResource extends BaseObjectResource<Device> {
             for (String uniqueId : uniqueIds) {
                 result.addAll(storage.getObjects(Device.class, new Request(
                         new Columns.All(),
-                        new Condition.And(
-                                new Condition.Equals("uniqueId", "uniqueId", uniqueId),
-                                new Condition.Permission(User.class, getUserId(), Device.class)))));
+                        new Condition.Equals("uniqueId", "uniqueId", uniqueId))));
             }
             for (Long deviceId : deviceIds) {
                 result.addAll(storage.getObjects(Device.class, new Request(
                         new Columns.All(),
-                        new Condition.And(
-                                new Condition.Equals("id", "id", deviceId),
-                                new Condition.Permission(User.class, getUserId(), Device.class)))));
+                        new Condition.Equals("id", "id", deviceId))));
             }
             return result;
 
