@@ -188,6 +188,68 @@ public class TzoneProtocolDecoder extends BaseProtocolDecoder {
 
     }
 
+    private void decodeCardsAVL(Position position, ByteBuf buf) {
+
+        for (int i = 0; i < 4; i++) {
+
+            int blockLength = buf.readUnsignedShort();
+            int blockEnd = buf.readerIndex() + blockLength;
+
+            if (blockLength > 0) {
+
+                // hitung jumlah card
+                int count = buf.readUnsignedByte();
+
+                position.set(Position.TOTAL_TAG, String.valueOf(count));
+
+                // length total data card
+                int length = buf.readUnsignedByte();
+
+                for (int j = 0; j < count; j++) {
+
+                    int cardNumber = j + 1;
+
+                    boolean odd = length % 2 != 0;
+                    if (odd) {
+                        length += 1;
+                    }
+
+                    String data = ByteBufUtil.hexDump(buf.readSlice(length / 2));
+
+                    if (odd) {
+                        data = data.substring(1);
+                    }
+
+                    position.set("card" + cardNumber, data);
+
+                    position.set("cardId" + cardNumber, data.substring(2, 10));
+
+                    String temperature = data.substring(11, 14);
+                    String checkbit = data.substring(10, 11);
+
+                    String humidity = data.substring(14, 16);
+
+                    int temp = Integer.parseInt(temperature, 16) / 100;
+
+                    if (!checkbit.equals("0")) {
+                        temp = -temp;
+                    }
+
+                    // untuk traccar
+                    position.set(Position.PREFIX_TEMP + cardNumber, String.valueOf(temp));
+
+                    int hum = Integer.parseInt(humidity, 16);
+                    if (hum <= 100) {
+                        position.set(Position.PREFIX_HUMIDITY + cardNumber, String.valueOf(hum));
+                    }
+                }
+            }
+
+            buf.readerIndex(blockEnd);
+        }
+
+    }
+
     private void decodePassengers(Position position, ByteBuf buf) {
 
         int blockLength = buf.readUnsignedShort();
@@ -362,6 +424,10 @@ public class TzoneProtocolDecoder extends BaseProtocolDecoder {
 
             decodePassengers(position, buf);
 
+        }
+
+        if (hardware == 0x0111) {
+            decodeCardsAVL(position, buf);
         }
 
         if (hardware == 0x406) {
