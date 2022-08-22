@@ -106,7 +106,7 @@ public class TzoneProtocolDecoder extends BaseProtocolDecoder {
         double lat;
         double lon;
 
-        if (hardware == 0x10A || hardware == 0x10B) {
+        if (hardware == 0x10A || hardware == 0x10B || hardware == 0x0111) {
             lat = buf.readUnsignedInt() / 600000.0;
             lon = buf.readUnsignedInt() / 600000.0;
         } else {
