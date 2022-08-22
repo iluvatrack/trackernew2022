@@ -110,8 +110,7 @@ public class ReportUtils {
             long userId, Collection<Long> deviceIds, Collection<Long> groupIds) throws StorageException {
 
         var devices = storage.getObjects(Device.class, new Request(
-                new Columns.All(),
-                new Condition.Permission(User.class, userId, Device.class)));
+                new Columns.All()));
         var deviceById = devices.stream()
                 .collect(Collectors.toUnmodifiableMap(Device::getId, x -> x));
         var devicesByGroup = devices.stream()
