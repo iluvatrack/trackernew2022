@@ -80,19 +80,32 @@ public class DeviceResource extends BaseObjectResource<Device> {
         if (!uniqueIds.isEmpty() || !deviceIds.isEmpty()) {
 
             List<Device> result = new LinkedList<>();
-            for (String uniqueId : uniqueIds) {
-                result.addAll(storage.getObjects(Device.class, new Request(
-                        new Columns.All(),
-                        new Condition.And(
-                                new Condition.Equals("uniqueId", "uniqueId", uniqueId),
-                                new Condition.Permission(User.class, getUserId(), Device.class)))));
-            }
-            for (Long deviceId : deviceIds) {
-                result.addAll(storage.getObjects(Device.class, new Request(
-                        new Columns.All(),
-                        new Condition.And(
-                                new Condition.Equals("id", "id", deviceId),
-                                new Condition.Permission(User.class, getUserId(), Device.class)))));
+            if (permissionsService.notAdmin(getUserId())) {
+                for (String uniqueId : uniqueIds) {
+                    result.addAll(storage.getObjects(Device.class, new Request(
+                            new Columns.All(),
+                            new Condition.And(
+                                    new Condition.Equals("uniqueId", "uniqueId", uniqueId),
+                                    new Condition.Permission(User.class, getUserId(), Device.class)))));
+                }
+                for (Long deviceId : deviceIds) {
+                    result.addAll(storage.getObjects(Device.class, new Request(
+                            new Columns.All(),
+                            new Condition.And(
+                                    new Condition.Equals("id", "id", deviceId),
+                                    new Condition.Permission(User.class, getUserId(), Device.class)))));
+                }
+            } else {
+                for (String uniqueId : uniqueIds) {
+                    result.addAll(storage.getObjects(Device.class, new Request(
+                            new Columns.All(),
+                            new Condition.Equals("uniqueId", "uniqueId", uniqueId))));
+                }
+                for (Long deviceId : deviceIds) {
+                    result.addAll(storage.getObjects(Device.class, new Request(
+                            new Columns.All(),
+                            new Condition.Equals("id", "id", deviceId))));
+                }
             }
             return result;
 
