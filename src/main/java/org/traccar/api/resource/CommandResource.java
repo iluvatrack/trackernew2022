@@ -106,7 +106,9 @@ public class CommandResource extends ExtendedObjectResource<Command> {
         } else {
             permissionsService.checkRestriction(getUserId(), UserRestrictions::getLimitCommands);
         }
-        permissionsService.checkPermission(Device.class, getUserId(), entity.getDeviceId());
+        if (permissionsService.notAdmin(getUserId())) {
+            permissionsService.checkPermission(Device.class, getUserId(), entity.getDeviceId());
+        }
         if (!commandsManager.sendCommand(entity)) {
             return Response.accepted(entity).build();
         }
