@@ -17,14 +17,21 @@
 package org.traccar.handler.events;
 
 import io.netty.channel.ChannelHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.helper.model.PositionUtil;
 import org.traccar.model.Device;
 import org.traccar.model.Event;
 import org.traccar.model.Position;
 import org.traccar.reports.common.TripsConfig;
-import org.traccar.session.ConnectionManager;
-import org.traccar.session.DeviceState;
 import org.traccar.session.cache.CacheManager;
+import org.traccar.session.state.MotionProcessor;
+import org.traccar.session.state.MotionState;
+import org.traccar.storage.Storage;
+import org.traccar.storage.StorageException;
+import org.traccar.storage.query.Columns;
+import org.traccar.storage.query.Condition;
+import org.traccar.storage.query.Request;
 
 import javax.inject.Inject;
 import java.util.Collections;
@@ -33,81 +40,18 @@ import java.util.Map;
 @ChannelHandler.Sharable
 public class MotionEventHandler extends BaseEventHandler {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MotionEventHandler.class);
+
     private final CacheManager cacheManager;
-    private final ConnectionManager connectionManager;
+    private final Storage storage;
     private final TripsConfig tripsConfig;
 
     @Inject
     public MotionEventHandler(
-            CacheManager cacheManager, ConnectionManager connectionManager, TripsConfig tripsConfig) {
+            CacheManager cacheManager, Storage storage, TripsConfig tripsConfig) {
         this.cacheManager = cacheManager;
-        this.connectionManager = connectionManager;
+        this.storage = storage;
         this.tripsConfig = tripsConfig;
-    }
-
-    private Map<Event, Position> newEvent(DeviceState deviceState, boolean newMotion) {
-        String eventType = newMotion ? Event.TYPE_DEVICE_MOVING : Event.TYPE_DEVICE_STOPPED;
-        Position position = deviceState.getMotionPosition();
-        Event event = new Event(eventType, position);
-        deviceState.setMotionState(newMotion);
-        deviceState.setMotionPosition(null);
-        return Collections.singletonMap(event, position);
-    }
-
-    public Map<Event, Position> updateMotionState(DeviceState deviceState) {
-        Map<Event, Position> result = null;
-        if (deviceState.getMotionState() != null && deviceState.getMotionPosition() != null) {
-            boolean newMotion = !deviceState.getMotionState();
-            Position motionPosition = deviceState.getMotionPosition();
-            long currentTime = System.currentTimeMillis();
-            long motionTime = motionPosition.getFixTime().getTime()
-                    + (newMotion ? tripsConfig.getMinimalTripDuration() : tripsConfig.getMinimalParkingDuration());
-            if (motionTime <= currentTime) {
-                result = newEvent(deviceState, newMotion);
-            }
-        }
-        return result;
-    }
-
-    public Map<Event, Position> updateMotionState(DeviceState deviceState, Position position) {
-        return updateMotionState(deviceState, position, position.getBoolean(Position.KEY_MOTION));
-    }
-
-    public Map<Event, Position> updateMotionState(DeviceState deviceState, Position position, boolean newMotion) {
-        Map<Event, Position> result = null;
-        Boolean oldMotion = deviceState.getMotionState();
-
-        long currentTime = position.getFixTime().getTime();
-        if (newMotion != oldMotion) {
-            if (deviceState.getMotionPosition() == null) {
-                deviceState.setMotionPosition(position);
-            }
-        } else {
-            deviceState.setMotionPosition(null);
-        }
-
-        Position motionPosition = deviceState.getMotionPosition();
-        if (motionPosition != null) {
-            long motionTime = motionPosition.getFixTime().getTime();
-            double distance = PositionUtil.calculateDistance(motionPosition, position, false);
-            Boolean ignition = null;
-            if (tripsConfig.getUseIgnition()
-                    && position.hasAttribute(Position.KEY_IGNITION)) {
-                ignition = position.getBoolean(Position.KEY_IGNITION);
-            }
-            if (newMotion) {
-                if (motionTime + tripsConfig.getMinimalTripDuration() <= currentTime
-                        || distance >= tripsConfig.getMinimalTripDistance()) {
-                    result = newEvent(deviceState, newMotion);
-                }
-            } else {
-                if (motionTime + tripsConfig.getMinimalParkingDuration() <= currentTime
-                        || ignition != null && !ignition) {
-                    result = newEvent(deviceState, newMotion);
-                }
-            }
-        }
-        return result;
     }
 
     @Override
@@ -123,16 +67,19 @@ public class MotionEventHandler extends BaseEventHandler {
             return null;
         }
 
-        Map<Event, Position> result = null;
-        DeviceState deviceState = connectionManager.getDeviceState(deviceId);
-
-        if (deviceState.getMotionState() == null) {
-            deviceState.setMotionState(position.getBoolean(Position.KEY_MOTION));
-        } else {
-            result = updateMotionState(deviceState, position);
+        MotionState state = MotionState.fromDevice(device);
+        MotionProcessor.updateState(state, position, position.getBoolean(Position.KEY_MOTION), tripsConfig);
+        if (state.isChanged()) {
+            state.toDevice(device);
+            try {
+                storage.updateObject(device, new Request(
+                        new Columns.Include("motionState", "motionTime", "motionDistance"),
+                        new Condition.Equals("id", "id")));
+            } catch (StorageException e) {
+                LOGGER.warn("Update device motion error", e);
+            }
         }
-        connectionManager.setDeviceState(deviceId, deviceState);
-        return result;
+        return state.getEvent() != null ? Collections.singletonMap(state.getEvent(), position) : null;
     }
 
 }

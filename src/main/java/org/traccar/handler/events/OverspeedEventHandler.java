@@ -16,100 +16,48 @@
  */
 package org.traccar.handler.events;
 
-import java.util.Collections;
-import java.util.Map;
-
 import io.netty.channel.ChannelHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
 import org.traccar.helper.model.AttributeUtil;
 import org.traccar.helper.model.PositionUtil;
 import org.traccar.model.Device;
-import org.traccar.session.ConnectionManager;
-import org.traccar.session.DeviceState;
 import org.traccar.model.Event;
 import org.traccar.model.Geofence;
 import org.traccar.model.Position;
 import org.traccar.session.cache.CacheManager;
+import org.traccar.session.state.OverspeedProcessor;
+import org.traccar.session.state.OverspeedState;
+import org.traccar.storage.Storage;
+import org.traccar.storage.StorageException;
+import org.traccar.storage.query.Columns;
+import org.traccar.storage.query.Condition;
+import org.traccar.storage.query.Request;
 
 import javax.inject.Inject;
+import java.util.Collections;
+import java.util.Map;
 
 @ChannelHandler.Sharable
 public class OverspeedEventHandler extends BaseEventHandler {
 
-    public static final String ATTRIBUTE_SPEED = "speed";
+    private static final Logger LOGGER = LoggerFactory.getLogger(OverspeedEventHandler.class);
 
-    private final ConnectionManager connectionManager;
     private final CacheManager cacheManager;
+    private final Storage storage;
 
-    private final boolean notRepeat;
     private final long minimalDuration;
     private final boolean preferLowest;
 
     @Inject
-    public OverspeedEventHandler(Config config, ConnectionManager connectionManager, CacheManager cacheManager) {
-        this.connectionManager = connectionManager;
+    public OverspeedEventHandler(
+            Config config, CacheManager cacheManager, Storage storage) {
         this.cacheManager = cacheManager;
-        notRepeat = config.getBoolean(Keys.EVENT_OVERSPEED_NOT_REPEAT);
+        this.storage = storage;
         minimalDuration = config.getLong(Keys.EVENT_OVERSPEED_MINIMAL_DURATION) * 1000;
         preferLowest = config.getBoolean(Keys.EVENT_OVERSPEED_PREFER_LOWEST);
-    }
-
-    private Map<Event, Position> newEvent(DeviceState deviceState, double speedLimit) {
-        Position position = deviceState.getOverspeedPosition();
-        Event event = new Event(Event.TYPE_DEVICE_OVERSPEED, position);
-        event.set(ATTRIBUTE_SPEED, deviceState.getOverspeedPosition().getSpeed());
-        event.set(Position.KEY_SPEED_LIMIT, speedLimit);
-        event.setGeofenceId(deviceState.getOverspeedGeofenceId());
-        deviceState.setOverspeedState(notRepeat);
-        deviceState.setOverspeedPosition(null);
-        deviceState.setOverspeedGeofenceId(0);
-        return Collections.singletonMap(event, position);
-    }
-
-    public Map<Event, Position> updateOverspeedState(DeviceState deviceState, double speedLimit) {
-        Map<Event, Position> result = null;
-        if (deviceState.getOverspeedState() != null && !deviceState.getOverspeedState()
-                && deviceState.getOverspeedPosition() != null && speedLimit != 0) {
-            long currentTime = System.currentTimeMillis();
-            Position overspeedPosition = deviceState.getOverspeedPosition();
-            long overspeedTime = overspeedPosition.getFixTime().getTime();
-            if (overspeedTime + minimalDuration <= currentTime) {
-                result = newEvent(deviceState, speedLimit);
-            }
-        }
-        return result;
-    }
-
-    public Map<Event, Position> updateOverspeedState(
-            DeviceState deviceState, Position position, double speedLimit, long geofenceId) {
-        Map<Event, Position> result = null;
-
-        Boolean oldOverspeed = deviceState.getOverspeedState();
-
-        long currentTime = position.getFixTime().getTime();
-        boolean newOverspeed = position.getSpeed() > speedLimit;
-        if (newOverspeed && !oldOverspeed) {
-            if (deviceState.getOverspeedPosition() == null) {
-                deviceState.setOverspeedPosition(position);
-                deviceState.setOverspeedGeofenceId(geofenceId);
-            }
-        } else if (oldOverspeed && !newOverspeed) {
-            deviceState.setOverspeedState(false);
-            deviceState.setOverspeedPosition(null);
-            deviceState.setOverspeedGeofenceId(0);
-        } else {
-            deviceState.setOverspeedPosition(null);
-            deviceState.setOverspeedGeofenceId(0);
-        }
-        Position overspeedPosition = deviceState.getOverspeedPosition();
-        if (overspeedPosition != null) {
-            long overspeedTime = overspeedPosition.getFixTime().getTime();
-            if (newOverspeed && overspeedTime + minimalDuration <= currentTime) {
-                result = newEvent(deviceState, speedLimit);
-            }
-        }
-        return result;
     }
 
     @Override
@@ -156,18 +104,19 @@ public class OverspeedEventHandler extends BaseEventHandler {
             return null;
         }
 
-        Map<Event, Position> result = null;
-        DeviceState deviceState = connectionManager.getDeviceState(deviceId);
-
-        if (deviceState.getOverspeedState() == null) {
-            deviceState.setOverspeedState(position.getSpeed() > speedLimit);
-            deviceState.setOverspeedGeofenceId(position.getSpeed() > speedLimit ? overspeedGeofenceId : 0);
-        } else {
-            result = updateOverspeedState(deviceState, position, speedLimit, overspeedGeofenceId);
+        OverspeedState state = OverspeedState.fromDevice(device);
+        OverspeedProcessor.updateState(state, position, speedLimit, minimalDuration, overspeedGeofenceId);
+        if (state.isChanged()) {
+            state.toDevice(device);
+            try {
+                storage.updateObject(device, new Request(
+                        new Columns.Include("overspeedState", "overspeedTime", "overspeedGeofenceId"),
+                        new Condition.Equals("id", "id")));
+            } catch (StorageException e) {
+                LOGGER.warn("Update device overspeed error", e);
+            }
         }
-
-        connectionManager.setDeviceState(deviceId, deviceState);
-        return result;
+        return state.getEvent() != null ? Collections.singletonMap(state.getEvent(), position) : null;
     }
 
 }

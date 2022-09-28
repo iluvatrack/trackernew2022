@@ -30,21 +30,20 @@ import org.traccar.api.security.PermissionsService;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
 import org.traccar.geocoder.Geocoder;
-import org.traccar.handler.events.MotionEventHandler;
 import org.traccar.helper.UnitsConverter;
 import org.traccar.helper.model.PositionUtil;
 import org.traccar.helper.model.UserUtil;
 import org.traccar.model.BaseModel;
 import org.traccar.model.Device;
 import org.traccar.model.Driver;
-import org.traccar.model.Event;
 import org.traccar.model.Group;
 import org.traccar.model.Position;
 import org.traccar.model.User;
 import org.traccar.reports.model.BaseReportItem;
 import org.traccar.reports.model.StopReportItem;
 import org.traccar.reports.model.TripReportItem;
-import org.traccar.session.DeviceState;
+import org.traccar.session.state.MotionProcessor;
+import org.traccar.session.state.MotionState;
 import org.traccar.storage.Storage;
 import org.traccar.storage.StorageException;
 import org.traccar.storage.query.Columns;
@@ -65,7 +64,6 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -360,39 +358,40 @@ public class ReportUtils {
         ArrayList<Position> positions = new ArrayList<>(positionCollection);
         if (!positions.isEmpty()) {
             boolean trips = reportClass.equals(TripReportItem.class);
-            MotionEventHandler motionHandler = new MotionEventHandler(null, null, tripsConfig);
-            DeviceState deviceState = new DeviceState();
-            deviceState.setMotionState(isMoving(positions, 0, tripsConfig));
-            int startEventIndex = trips == deviceState.getMotionState() ? 0 : -1;
+
+            MotionState motionState = new MotionState();
+            motionState.setMotionState(isMoving(positions, 0, tripsConfig));
+
+            boolean detected = trips == motionState.getMotionState();
+            int startEventIndex = detected ? 0 : -1;
             int startNoEventIndex = -1;
             for (int i = 0; i < positions.size(); i++) {
-                Map<Event, Position> event = motionHandler.updateMotionState(deviceState, positions.get(i),
-                        isMoving(positions, i, tripsConfig));
-                if (startEventIndex == -1
-                        && (trips != deviceState.getMotionState() && deviceState.getMotionPosition() != null
-                        || trips == deviceState.getMotionState() && event != null)) {
-                    startEventIndex = i;
-                    startNoEventIndex = -1;
-                } else if (trips != deviceState.getMotionState() && startEventIndex != -1
-                        && deviceState.getMotionPosition() == null && event == null) {
-                    startEventIndex = -1;
+                boolean motion = isMoving(positions, i, tripsConfig);
+                if (motionState.getMotionState() != motion) {
+                    if (motion == trips) {
+                        startEventIndex = detected ? startEventIndex : i;
+                        startNoEventIndex = -1;
+                    } else {
+                        startNoEventIndex = i;
+                    }
                 }
-                if (startNoEventIndex == -1
-                        && (trips == deviceState.getMotionState() && deviceState.getMotionPosition() != null
-                        || trips != deviceState.getMotionState() && event != null)) {
-                    startNoEventIndex = i;
-                } else if (startNoEventIndex != -1 && deviceState.getMotionPosition() == null && event == null) {
-                    startNoEventIndex = -1;
-                }
-                if (startEventIndex != -1 && startNoEventIndex != -1 && event != null
-                        && trips != deviceState.getMotionState()) {
-                    result.add(calculateTripOrStop(
-                            device, positions, startEventIndex, startNoEventIndex, ignoreOdometer, reportClass));
-                    startEventIndex = -1;
+
+                MotionProcessor.updateState(motionState, positions.get(i), motion, tripsConfig);
+                if (motionState.getEvent() != null) {
+                    if (motion == trips) {
+                        detected = true;
+                        startNoEventIndex = -1;
+                    } else if (startEventIndex >= 0 && startNoEventIndex >= 0) {
+                        result.add(calculateTripOrStop(
+                                device, positions, startEventIndex, startNoEventIndex, ignoreOdometer, reportClass));
+                        detected = false;
+                        startEventIndex = -1;
+                        startNoEventIndex = -1;
+                    }
                 }
             }
-            if (startEventIndex != -1 && (startNoEventIndex != -1 || !trips)) {
-                int endIndex = startNoEventIndex != -1 ? startNoEventIndex : positions.size() - 1;
+            if (startEventIndex >= 0 && startEventIndex < positions.size() - 1) {
+                int endIndex = startNoEventIndex >= 0 ? startNoEventIndex : positions.size() - 1;
                 result.add(calculateTripOrStop(
                         device, positions, startEventIndex, endIndex, ignoreOdometer, reportClass));
             }
