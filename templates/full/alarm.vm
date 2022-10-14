@@ -3,7 +3,7 @@
 <html>
 <body>
 Device: $device.name<br>
-Alarm: $position.getString("alarm")<br>
+Alarm: #{if}($position.getString("alarm").equals("temperature"))Temperature<br>Current Temperature: $position.attributes.temperature°C#{else}$position.getString("alarm")#{end}<br>
 Time: $dateTool.format("YYYY-MM-dd HH:mm:ss", $event.eventTime, $locale, $timezone)<br>
 Point: <a href="https://maps.google.com/?q=$position.latitude,$position.longitude&ll=$position.latitude,$position.longitude&z=18">#{if}($position.address)$position.address#{else}$position.latitude&deg;, $position.longitude&deg;#{end}</a><br>
 <br>
