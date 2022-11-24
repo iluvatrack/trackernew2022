@@ -109,9 +109,17 @@ public class ReportUtils {
     public Collection<Device> getAccessibleDevices(
             long userId, Collection<Long> deviceIds, Collection<Long> groupIds) throws StorageException {
 
-        var devices = storage.getObjects(Device.class, new Request(
-                new Columns.All(),
-                new Condition.Permission(User.class, userId, Device.class)));
+        List<Device> devices;
+
+        if (permissionsService.notAdmin(userId)) {
+            devices = storage.getObjects(Device.class, new Request(
+                    new Columns.All(),
+                    new Condition.Permission(User.class, userId, Device.class)));
+        } else {
+            devices = storage.getObjects(Device.class, new Request(
+                    new Columns.All()));
+        }
+
         var deviceById = devices.stream()
                 .collect(Collectors.toUnmodifiableMap(Device::getId, x -> x));
         var devicesByGroup = devices.stream()
