@@ -275,7 +275,20 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         DateBuilder dateBuilder = new DateBuilder(timezone)
                 .setDate(buf.readUnsignedByte(), buf.readUnsignedByte(), buf.readUnsignedByte())
                 .setTime(buf.readUnsignedByte(), buf.readUnsignedByte(), buf.readUnsignedByte());
-        position.setTime(dateBuilder.getDate());
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(dateBuilder.getDate());
+
+        if (cal.get(Calendar.YEAR) > 2090) {
+            cal.add(Calendar.DAY_OF_MONTH, -29357);
+        }
+        else if(cal.get(Calendar.YEAR) < 2010) {
+            cal.add(Calendar.DAY_OF_MONTH, 7168);
+        }
+
+        position.setTime(cal.getTime());
+
+//        System.out.println(position.getDeviceTime());
 
         if (hasLength && buf.readUnsignedByte() == 0) {
             return false;
