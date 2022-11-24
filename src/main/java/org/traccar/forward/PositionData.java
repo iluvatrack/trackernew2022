@@ -13,34 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.traccar.storage.query;
+package org.traccar.forward;
 
-public class Order {
+import com.fasterxml.jackson.annotation.JsonInclude;
+import org.traccar.model.Device;
+import org.traccar.model.Position;
 
-    private final String column;
-    private final boolean descending;
-    private final int limit;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class PositionData {
 
-    public Order(String column) {
-        this(column, false, 0);
+    private Position position;
+
+    public Position getPosition() {
+        return position;
     }
 
-    public Order(String column, boolean descending, int limit) {
-        this.column = column;
-        this.descending = false;
-        this.limit = limit;
+    public void setPosition(Position position) {
+        this.position = position;
     }
 
-    public String getColumn() {
-        return column;
+    private Device device;
+
+    public Device getDevice() {
+        return device;
     }
 
-    public boolean getDescending() {
-        return descending;
-    }
-
-    public int getLimit() {
-        return limit;
+    public void setDevice(Device device) {
+        this.device = device;
     }
 
 }

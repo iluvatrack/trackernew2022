@@ -34,6 +34,7 @@ import org.traccar.storage.query.Condition;
 import org.traccar.storage.query.Request;
 
 import javax.inject.Inject;
+import java.util.Objects;
 
 @RequestScoped
 public class PermissionsService {
@@ -104,7 +105,7 @@ public class PermissionsService {
             } else if (clazz.equals(Device.class)) {
                 denied = getServer().getDeviceReadonly() || getUser(userId).getDeviceReadonly()
                         || addition && getUser(userId).getDeviceLimit() == 0;
-                if (addition && getUser(userId).getDeviceLimit() > 0) {
+                if (!denied && addition && getUser(userId).getDeviceLimit() > 0) {
                     int deviceCount = storage.getObjects(Device.class, new Request(
                             new Columns.Include("id"),
                             new Condition.Permission(User.class, userId, Device.class))).size();
@@ -158,6 +159,7 @@ public class PermissionsService {
         }
         User user = getUser(userId);
         if (user != null && user.getExpirationTime() != null
+                && !Objects.equals(before.getExpirationTime(), after.getExpirationTime())
                 && (after.getExpirationTime() == null
                 || user.getExpirationTime().compareTo(after.getExpirationTime()) < 0)) {
             checkAdmin(userId);

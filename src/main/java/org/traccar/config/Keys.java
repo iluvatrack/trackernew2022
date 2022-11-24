@@ -699,6 +699,22 @@ public final class Keys {
             "max-age=3600,public");
 
     /**
+     * Position forwarding format. Available options are "url", "json" and "kafka". Default is "url".
+     */
+    public static final ConfigKey<String> FORWARD_TYPE = new StringConfigKey(
+            "forward.type",
+            List.of(KeyType.CONFIG),
+            "url");
+
+    /**
+     * Position forwarding Kafka topic.
+     */
+    public static final ConfigKey<String> FORWARD_TOPIC = new StringConfigKey(
+            "forward.topic",
+            List.of(KeyType.CONFIG),
+            "positions");
+
+    /**
      * URL to forward positions. Data is passed through URL parameters. For example, {uniqueId} for device identifier,
      * {latitude} and {longitude} for coordinates.
      */
@@ -711,21 +727,6 @@ public final class Keys {
      */
     public static final ConfigKey<String> FORWARD_HEADER = new StringConfigKey(
             "forward.header",
-            List.of(KeyType.CONFIG));
-
-    /**
-     * Boolean value to enable forwarding in JSON format.
-     */
-    public static final ConfigKey<Boolean> FORWARD_JSON = new BooleanConfigKey(
-            "forward.json",
-            List.of(KeyType.CONFIG));
-
-    /**
-     * Boolean value to enable URL parameters in json mode. For example, {uniqueId} for device identifier,
-     * {latitude} and {longitude} for coordinates.
-     */
-    public static final ConfigKey<Boolean> FORWARD_URL_VARIABLES = new BooleanConfigKey(
-            "forward.urlVariables",
             List.of(KeyType.CONFIG));
 
     /**
@@ -745,7 +746,8 @@ public final class Keys {
      */
     public static final ConfigKey<Integer> FORWARD_RETRY_DELAY = new IntegerConfigKey(
             "forward.retry.delay",
-            List.of(KeyType.CONFIG));
+            List.of(KeyType.CONFIG),
+            100);
 
     /**
      * Position forwarding retry maximum retries.
@@ -753,7 +755,8 @@ public final class Keys {
      */
     public static final ConfigKey<Integer> FORWARD_RETRY_COUNT = new IntegerConfigKey(
             "forward.retry.count",
-            List.of(KeyType.CONFIG));
+            List.of(KeyType.CONFIG),
+            10);
 
     /**
      * Position forwarding retry pending positions limit.
@@ -761,7 +764,24 @@ public final class Keys {
      */
     public static final ConfigKey<Integer> FORWARD_RETRY_LIMIT = new IntegerConfigKey(
             "forward.retry.limit",
-            List.of(KeyType.CONFIG));
+            List.of(KeyType.CONFIG),
+            100);
+
+    /**
+     * Events forwarding format. Available options are "json" and "kafka". Default is "json".
+     */
+    public static final ConfigKey<String> EVENT_FORWARD_TYPE = new StringConfigKey(
+            "event.forward.type",
+            List.of(KeyType.CONFIG),
+            "json");
+
+    /**
+     * Events forwarding Kafka topic.
+     */
+    public static final ConfigKey<String> EVENT_FORWARD_TOPIC = new StringConfigKey(
+            "event.forward.topic",
+            List.of(KeyType.CONFIG),
+            "events");
 
     /**
      * Events forwarding URL.

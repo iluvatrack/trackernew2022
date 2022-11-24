@@ -141,7 +141,7 @@ public abstract class BasePipelineFactory extends ChannelInitializer<Channel> {
                 CopyAttributesHandler.class,
                 EngineHoursHandler.class,
                 ComputedAttributesHandler.class,
-                WebDataHandler.class,
+                PositionForwardingHandler.class,
                 DefaultDataHandler.class,
                 RabbitDataHandler.class,
                 MediaEventHandler.class,

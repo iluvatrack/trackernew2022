@@ -36,6 +36,13 @@ import org.traccar.config.Keys;
 import org.traccar.database.LdapProvider;
 import org.traccar.database.RabbitManager;
 import org.traccar.database.StatisticsManager;
+import org.traccar.forward.EventForwarder;
+import org.traccar.forward.EventForwarderJson;
+import org.traccar.forward.EventForwarderKafka;
+import org.traccar.forward.PositionForwarder;
+import org.traccar.forward.PositionForwarderJson;
+import org.traccar.forward.PositionForwarderKafka;
+import org.traccar.forward.PositionForwarderUrl;
 import org.traccar.geocoder.AddressFormat;
 import org.traccar.geocoder.BanGeocoder;
 import org.traccar.geocoder.BingMapsGeocoder;
@@ -68,7 +75,6 @@ import org.traccar.helper.SanitizerModule;
 import org.traccar.mail.LogMailManager;
 import org.traccar.mail.MailManager;
 import org.traccar.mail.SmtpMailManager;
-import org.traccar.notification.EventForwarder;
 import org.traccar.session.cache.CacheManager;
 import org.traccar.sms.HttpSmsClient;
 import org.traccar.sms.SmsManager;
@@ -311,9 +317,29 @@ public class MainModule extends AbstractModule {
 
     @Singleton
     @Provides
-    public static EventForwarder provideEventForwarder(Config config, Client client, CacheManager cacheManager) {
+    public static EventForwarder provideEventForwarder(Config config, Client client, ObjectMapper objectMapper) {
         if (config.hasKey(Keys.EVENT_FORWARD_URL)) {
-            return new EventForwarder(config, client, cacheManager);
+            if (config.getString(Keys.EVENT_FORWARD_TYPE).equals("kafka")) {
+                return new EventForwarderKafka(config, objectMapper);
+            } else {
+                return new EventForwarderJson(config, client);
+            }
+        }
+        return null;
+    }
+
+    @Singleton
+    @Provides
+    public static PositionForwarder providePositionForwarder(Config config, Client client, ObjectMapper objectMapper) {
+        if (config.hasKey(Keys.FORWARD_URL)) {
+            switch (config.getString(Keys.FORWARD_TYPE)) {
+                case "json":
+                    return new PositionForwarderJson(config, client, objectMapper);
+                case "kafka":
+                    return new PositionForwarderKafka(config, objectMapper);
+                default:
+                    return new PositionForwarderUrl(config, client, objectMapper);
+            }
         }
         return null;
     }
