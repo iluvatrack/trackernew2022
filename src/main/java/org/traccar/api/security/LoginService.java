@@ -28,9 +28,11 @@ import org.traccar.storage.query.Request;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
+@Singleton
 public class LoginService {
 
     private final Storage storage;
@@ -56,7 +58,7 @@ public class LoginService {
         }
         long userId = tokenManager.verifyToken(token);
         User user = storage.getObject(User.class, new Request(
-                new Columns.All(), new Condition.Equals("id", "id", userId)));
+                new Columns.All(), new Condition.Equals("id", userId)));
         if (user != null) {
             checkUserEnabled(user);
         }
@@ -64,11 +66,12 @@ public class LoginService {
     }
 
     public User login(String email, String password) throws StorageException {
+        email = email.trim();
         User user = storage.getObject(User.class, new Request(
                 new Columns.All(),
                 new Condition.Or(
-                        new Condition.Equals("email", "email", email.trim()),
-                        new Condition.Equals("login", "email"))));
+                        new Condition.Equals("email", email),
+                        new Condition.Equals("login", email))));
         if (user != null) {
             if (ldapProvider != null && user.getLogin() != null && ldapProvider.login(user.getLogin(), password)
                     || !forceLdap && user.isPasswordValid(password)) {

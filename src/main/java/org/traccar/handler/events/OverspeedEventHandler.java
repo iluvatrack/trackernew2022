@@ -37,9 +37,11 @@ import org.traccar.storage.query.Condition;
 import org.traccar.storage.query.Request;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.Map;
 
+@Singleton
 @ChannelHandler.Sharable
 public class OverspeedEventHandler extends BaseEventHandler {
 
@@ -111,7 +113,7 @@ public class OverspeedEventHandler extends BaseEventHandler {
             try {
                 storage.updateObject(device, new Request(
                         new Columns.Include("overspeedState", "overspeedTime", "overspeedGeofenceId"),
-                        new Condition.Equals("id", "id")));
+                        new Condition.Equals("id", device.getId())));
             } catch (StorageException e) {
                 LOGGER.warn("Update device overspeed error", e);
             }

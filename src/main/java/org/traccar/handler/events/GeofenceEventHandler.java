@@ -33,11 +33,13 @@ import org.traccar.storage.query.Condition;
 import org.traccar.storage.query.Request;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Singleton
 @ChannelHandler.Sharable
 public class GeofenceEventHandler extends BaseEventHandler {
 
@@ -80,7 +82,8 @@ public class GeofenceEventHandler extends BaseEventHandler {
 
             try {
                 storage.updateObject(device, new Request(
-                        new Columns.Include("geofenceIds"), new Condition.Equals("id", "id")));
+                        new Columns.Include("geofenceIds"),
+                        new Condition.Equals("id", device.getId())));
             } catch (StorageException e) {
                 throw new RuntimeException("Update device geofences error", e);
             }

@@ -80,31 +80,32 @@ public class DeviceResource extends BaseObjectResource<Device> {
         if (!uniqueIds.isEmpty() || !deviceIds.isEmpty()) {
 
             List<Device> result = new LinkedList<>();
+
             if (permissionsService.notAdmin(getUserId())) {
                 for (String uniqueId : uniqueIds) {
                     result.addAll(storage.getObjects(Device.class, new Request(
                             new Columns.All(),
                             new Condition.And(
-                                    new Condition.Equals("uniqueId", "uniqueId", uniqueId),
+                                    new Condition.Equals("uniqueId", uniqueId),
                                     new Condition.Permission(User.class, getUserId(), Device.class)))));
                 }
                 for (Long deviceId : deviceIds) {
                     result.addAll(storage.getObjects(Device.class, new Request(
                             new Columns.All(),
                             new Condition.And(
-                                    new Condition.Equals("id", "id", deviceId),
+                                    new Condition.Equals("id", deviceId),
                                     new Condition.Permission(User.class, getUserId(), Device.class)))));
                 }
             } else {
                 for (String uniqueId : uniqueIds) {
                     result.addAll(storage.getObjects(Device.class, new Request(
                             new Columns.All(),
-                            new Condition.Equals("uniqueId", "uniqueId", uniqueId))));
+                            new Condition.Equals("uniqueId", uniqueId))));
                 }
                 for (Long deviceId : deviceIds) {
                     result.addAll(storage.getObjects(Device.class, new Request(
                             new Columns.All(),
-                            new Condition.Equals("id", "id", deviceId))));
+                            new Condition.Equals("id", deviceId))));
                 }
             }
             return result;
@@ -155,7 +156,7 @@ public class DeviceResource extends BaseObjectResource<Device> {
             device.setPositionId(position.getId());
             storage.updateObject(device, new Request(
                     new Columns.Include("positionId"),
-                    new Condition.Equals("id", "id")));
+                    new Condition.Equals("id", device.getId())));
 
             try {
                 cacheManager.addDevice(position.getDeviceId());
@@ -182,7 +183,7 @@ public class DeviceResource extends BaseObjectResource<Device> {
         Device device = storage.getObject(Device.class, new Request(
                 new Columns.All(),
                 new Condition.And(
-                        new Condition.Equals("id", "id", deviceId),
+                        new Condition.Equals("id", deviceId),
                         new Condition.Permission(User.class, getUserId(), Device.class))));
         if (device != null) {
             String name = "device";

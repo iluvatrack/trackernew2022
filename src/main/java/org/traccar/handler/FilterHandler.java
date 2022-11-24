@@ -35,8 +35,10 @@ import org.traccar.storage.query.Order;
 import org.traccar.storage.query.Request;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.Date;
 
+@Singleton
 @ChannelHandler.Sharable
 public class FilterHandler extends BaseDataHandler {
 
@@ -86,7 +88,7 @@ public class FilterHandler extends BaseDataHandler {
         return storage.getObject(Position.class, new Request(
                 new Columns.All(),
                 new Condition.And(
-                        new Condition.Equals("deviceId", "deviceId", deviceId),
+                        new Condition.Equals("deviceId", deviceId),
                         new Condition.Compare("fixTime", "<=", "time", date)),
                 new Order(true, "fixTime"),
                 new Limit(1)));

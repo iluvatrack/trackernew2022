@@ -34,9 +34,11 @@ import org.traccar.storage.query.Condition;
 import org.traccar.storage.query.Request;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.Map;
 
+@Singleton
 @ChannelHandler.Sharable
 public class MotionEventHandler extends BaseEventHandler {
 
@@ -74,7 +76,7 @@ public class MotionEventHandler extends BaseEventHandler {
             try {
                 storage.updateObject(device, new Request(
                         new Columns.Include("motionState", "motionTime", "motionDistance"),
-                        new Condition.Equals("id", "id")));
+                        new Condition.Equals("id", device.getId())));
             } catch (StorageException e) {
                 LOGGER.warn("Update device motion error", e);
             }

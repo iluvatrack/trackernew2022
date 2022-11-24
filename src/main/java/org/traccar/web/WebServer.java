@@ -45,14 +45,13 @@ import org.slf4j.LoggerFactory;
 import org.traccar.LifecycleObject;
 import org.traccar.api.CorsResponseFilter;
 import org.traccar.api.DateParameterConverterProvider;
-import org.traccar.api.ObjectMapperProvider;
 import org.traccar.api.ResourceErrorHandler;
 import org.traccar.api.resource.ServerResource;
 import org.traccar.api.security.SecurityRequestFilter;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
+import org.traccar.helper.ObjectMapperContextResolver;
 
-import javax.inject.Inject;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletException;
 import javax.servlet.SessionCookieConfig;
@@ -76,7 +75,6 @@ public class WebServer implements LifecycleObject {
     private final Config config;
     private final Server server;
 
-    @Inject
     public WebServer(Injector injector, Config config) {
         this.injector = injector;
         this.config = config;
@@ -180,7 +178,7 @@ public class WebServer implements LifecycleObject {
         ResourceConfig resourceConfig = new ResourceConfig();
         resourceConfig.registerClasses(
                 JacksonFeature.class,
-                ObjectMapperProvider.class,
+                ObjectMapperContextResolver.class,
                 DateParameterConverterProvider.class,
                 SecurityRequestFilter.class,
                 CorsResponseFilter.class,
