@@ -96,6 +96,7 @@ public class DeviceResource extends BaseObjectResource<Device> {
                                     new Condition.Equals("id", deviceId),
                                     new Condition.Permission(User.class, getUserId(), Device.class)))));
                 }
+                return result;
             } else {
                 for (String uniqueId : uniqueIds) {
                     result.addAll(storage.getObjects(Device.class, new Request(
@@ -107,8 +108,8 @@ public class DeviceResource extends BaseObjectResource<Device> {
                             new Columns.All(),
                             new Condition.Equals("id", deviceId))));
                 }
+                return result;
             }
-            return result;
 
         } else {
 
