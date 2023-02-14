@@ -26,7 +26,6 @@ import com.google.inject.name.Names;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.runtime.log.NullLogChute;
 import org.eclipse.jetty.util.URIUtil;
 import org.traccar.broadcast.BroadcastService;
 import org.traccar.broadcast.MulticastBroadcastService;
@@ -39,6 +38,7 @@ import org.traccar.database.StatisticsManager;
 import org.traccar.forward.EventForwarder;
 import org.traccar.forward.EventForwarderJson;
 import org.traccar.forward.EventForwarderKafka;
+import org.traccar.forward.EventForwarderMqtt;
 import org.traccar.forward.PositionForwarder;
 import org.traccar.forward.PositionForwarderJson;
 import org.traccar.forward.PositionForwarderKafka;
@@ -54,6 +54,7 @@ import org.traccar.geocoder.Geocoder;
 import org.traccar.geocoder.GisgraphyGeocoder;
 import org.traccar.geocoder.GoogleGeocoder;
 import org.traccar.geocoder.HereGeocoder;
+import org.traccar.geocoder.LocationIqGeocoder;
 import org.traccar.geocoder.MapQuestGeocoder;
 import org.traccar.geocoder.MapTilerGeocoder;
 import org.traccar.geocoder.MapboxGeocoder;
@@ -61,6 +62,7 @@ import org.traccar.geocoder.MapmyIndiaGeocoder;
 import org.traccar.geocoder.NominatimGeocoder;
 import org.traccar.geocoder.OpenCageGeocoder;
 import org.traccar.geocoder.PositionStackGeocoder;
+import org.traccar.geocoder.TestGeocoder;
 import org.traccar.geocoder.TomTomGeocoder;
 import org.traccar.geolocation.GeolocationProvider;
 import org.traccar.geolocation.GoogleGeolocationProvider;
@@ -181,8 +183,14 @@ public class MainModule extends AbstractModule {
             int cacheSize = config.getInteger(Keys.GEOCODER_CACHE_SIZE);
             Geocoder geocoder;
             switch (type) {
+                case "test":
+                    geocoder = new TestGeocoder();
+                    break;
                 case "nominatim":
                     geocoder = new NominatimGeocoder(client, url, key, language, cacheSize, addressFormat);
+                    break;
+                case "locationiq":
+                    geocoder = new LocationIqGeocoder(client, url, key, language, cacheSize, addressFormat);
                     break;
                 case "gisgraphy":
                     geocoder = new GisgraphyGeocoder(client, url, cacheSize, addressFormat);
@@ -319,10 +327,14 @@ public class MainModule extends AbstractModule {
     @Provides
     public static EventForwarder provideEventForwarder(Config config, Client client, ObjectMapper objectMapper) {
         if (config.hasKey(Keys.EVENT_FORWARD_URL)) {
-            if (config.getString(Keys.EVENT_FORWARD_TYPE).equals("kafka")) {
-                return new EventForwarderKafka(config, objectMapper);
-            } else {
-                return new EventForwarderJson(config, client);
+            String forwardType = config.getString(Keys.EVENT_FORWARD_TYPE);
+            switch (forwardType) {
+                case "kafka":
+                    return new EventForwarderKafka(config, objectMapper);
+                case "mqtt":
+                    return new EventForwarderMqtt(config, objectMapper);
+                default:
+                    return new EventForwarderJson(config, client);
             }
         }
         return null;
@@ -348,8 +360,7 @@ public class MainModule extends AbstractModule {
     @Provides
     public static VelocityEngine provideVelocityEngine(Config config) {
         Properties properties = new Properties();
-        properties.setProperty("file.resource.loader.path", config.getString(Keys.TEMPLATES_ROOT) + "/");
-        properties.setProperty("runtime.log.logsystem.class", NullLogChute.class.getName());
+        properties.setProperty("resource.loader.file.path", config.getString(Keys.TEMPLATES_ROOT) + "/");
 
         if (config.hasKey(Keys.WEB_URL)) {
             properties.setProperty("web.url", config.getString(Keys.WEB_URL).replaceAll("/$", ""));

@@ -365,7 +365,7 @@ public class T55ProtocolDecoder extends BaseProtocolDecoder {
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
-        String sentence = (String) msg;
+        String sentence = ((String) msg).trim();
 
         DeviceSession deviceSession;
 
@@ -379,11 +379,12 @@ public class T55ProtocolDecoder extends BaseProtocolDecoder {
             }
             deviceSession = getDeviceSession(channel, remoteAddress, id);
             sentence = sentence.substring(index);
-        } else if (remoteAddress instanceof InetSocketAddress) {
-            String host = ((InetSocketAddress) remoteAddress).getHostString();
-            deviceSession = getDeviceSession(channel, remoteAddress, host);
         } else {
             deviceSession = getDeviceSession(channel, remoteAddress);
+            if (deviceSession == null && remoteAddress instanceof InetSocketAddress) {
+                String host = ((InetSocketAddress) remoteAddress).getHostString();
+                deviceSession = getDeviceSession(channel, remoteAddress, host);
+            }
         }
 
         if (sentence.startsWith("$PGID")) {

@@ -62,10 +62,42 @@ public class MotionEventHandlerTest extends BaseTest {
     }
 
     @Test
+    public void testMotionFluctuation() throws ParseException {
+        TripsConfig tripsConfig = new TripsConfig(500, 300000, 300000, 0, false, false, 0.01);
+
+        MotionState state = new MotionState();
+
+        MotionProcessor.updateState(state, position("2017-01-01 00:00:00", false, 0, null), false, tripsConfig);
+        assertNull(state.getEvent());
+        verifyState(state, false, 0);
+
+        MotionProcessor.updateState(state, position("2017-01-01 00:02:00", true, 100, null), true, tripsConfig);
+        assertNull(state.getEvent());
+        verifyState(state, true, 100);
+
+        MotionProcessor.updateState(state, position("2017-01-01 00:02:00", true, 700, null), true, tripsConfig);
+        assertEquals(Event.TYPE_DEVICE_MOVING, state.getEvent().getType());
+        verifyState(state, true, 0);
+
+        MotionProcessor.updateState(state, position("2017-01-01 00:03:00", false, 700, null), false, tripsConfig);
+        assertNull(state.getEvent());
+        verifyState(state, false, 700);
+
+        MotionProcessor.updateState(state, position("2017-01-01 00:04:00", true, 1000, null), true, tripsConfig);
+        assertNull(state.getEvent());
+        verifyState(state, true, 0);
+
+        MotionProcessor.updateState(state, position("2017-01-01 00:06:00", true, 2000, null), true, tripsConfig);
+        assertNull(state.getEvent());
+        verifyState(state, true, 0);
+    }
+
+    @Test
     public void testStopWithPositionIgnition() throws ParseException {
         TripsConfig tripsConfig = new TripsConfig(500, 300000, 300000, 0, true, false, 0.01);
 
         MotionState state = new MotionState();
+        state.setMotionStreak(true);
         state.setMotionState(true);
 
         MotionProcessor.updateState(state, position("2017-01-01 00:00:00", false, 100, true), false, tripsConfig);

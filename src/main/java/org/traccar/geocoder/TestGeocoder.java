@@ -13,34 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.traccar.storage.query;
+package org.traccar.geocoder;
 
-public class Order {
+import org.traccar.database.StatisticsManager;
 
-    private final String column;
-    private final boolean descending;
-    private final int limit;
+public class TestGeocoder implements Geocoder {
 
-    public Order(String column) {
-        this(column, false, 0);
+    @Override
+    public void setStatisticsManager(StatisticsManager statisticsManager) {
     }
 
-    public Order(String column, boolean descending, int limit) {
-        this.column = column;
-        this.descending = descending;
-        this.limit = limit;
-    }
-
-    public String getColumn() {
-        return column;
-    }
-
-    public boolean getDescending() {
-        return descending;
-    }
-
-    public int getLimit() {
-        return limit;
+    @Override
+    public String getAddress(double latitude, double longitude, ReverseGeocoderCallback callback) {
+        String address = String.format("Location %f, %f", latitude, longitude);
+        if (callback != null) {
+            callback.onSuccess(address);
+            return null;
+        }
+        return address;
     }
 
 }

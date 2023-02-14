@@ -234,10 +234,10 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         register(66, null, (p, b) -> p.set(Position.KEY_POWER, b.readUnsignedShort() * 0.001));
         register(67, null, (p, b) -> p.set(Position.KEY_BATTERY, b.readUnsignedShort() * 0.001));
         register(68, fmbXXX, (p, b) -> p.set("batteryCurrent", b.readUnsignedShort() * 0.001));
-        register(72, fmbXXX, (p, b) -> p.set(Position.PREFIX_TEMP + 1, b.readShort() * 0.1));
-        register(73, fmbXXX, (p, b) -> p.set(Position.PREFIX_TEMP + 2, b.readShort() * 0.1));
-        register(74, fmbXXX, (p, b) -> p.set(Position.PREFIX_TEMP + 3, b.readShort() * 0.1));
-        register(75, fmbXXX, (p, b) -> p.set(Position.PREFIX_TEMP + 4, b.readShort() * 0.1));
+        register(72, fmbXXX, (p, b) -> p.set(Position.PREFIX_TEMP + 1, b.readInt() * 0.1));
+        register(73, fmbXXX, (p, b) -> p.set(Position.PREFIX_TEMP + 2, b.readInt() * 0.1));
+        register(74, fmbXXX, (p, b) -> p.set(Position.PREFIX_TEMP + 3, b.readInt() * 0.1));
+        register(75, fmbXXX, (p, b) -> p.set(Position.PREFIX_TEMP + 4, b.readInt() * 0.1));
         register(78, null, (p, b) -> {
             long driverUniqueId = b.readLong();
             if (driverUniqueId > 0) {
@@ -647,9 +647,11 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         }
     }
 
-    private Object decodeTcp(Channel channel, SocketAddress remoteAddress, ByteBuf buf) throws Exception {
+    private Object decodeTcp(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
 
-        if (buf.getUnsignedShort(0) > 0) {
+        if (buf.readableBytes() == 1 && buf.readUnsignedByte() == 0xff) {
+            return null;
+        } else if (buf.getUnsignedShort(0) > 0) {
             parseIdentification(channel, remoteAddress, buf);
         } else {
             buf.skipBytes(4);
@@ -659,7 +661,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private Object decodeUdp(Channel channel, SocketAddress remoteAddress, ByteBuf buf) throws Exception {
+    private Object decodeUdp(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
 
         buf.readUnsignedShort(); // length
         buf.readUnsignedShort(); // packet id

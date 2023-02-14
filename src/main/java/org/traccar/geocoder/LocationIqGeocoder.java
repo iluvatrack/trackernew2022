@@ -13,34 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.traccar.storage.query;
+package org.traccar.geocoder;
 
-public class Order {
+import javax.ws.rs.client.Client;
 
-    private final String column;
-    private final boolean descending;
-    private final int limit;
+public class LocationIqGeocoder extends NominatimGeocoder {
 
-    public Order(String column) {
-        this(column, false, 0);
-    }
+    private static final String DEFAULT_URL = "https://us1.locationiq.com/v1/reverse.php";
 
-    public Order(String column, boolean descending, int limit) {
-        this.column = column;
-        this.descending = descending;
-        this.limit = limit;
-    }
-
-    public String getColumn() {
-        return column;
-    }
-
-    public boolean getDescending() {
-        return descending;
-    }
-
-    public int getLimit() {
-        return limit;
+    public LocationIqGeocoder(
+            Client client, String url, String key, String language, int cacheSize, AddressFormat addressFormat) {
+        super(client, url != null ? url : DEFAULT_URL, key, language, cacheSize, addressFormat);
     }
 
 }
