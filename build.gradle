@@ -93,6 +93,9 @@ dependencies {
 
 test {
     useJUnitPlatform()
+
+    //Rabbit
+    implementation "com.rabbitmq:amqp-client:5.15.0"
 }
 
 task copyDependencies(type: Copy) {
