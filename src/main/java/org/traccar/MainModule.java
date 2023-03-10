@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 - 2022 Anton Tananaev (anton@traccar.org)
+ * Copyright 2018 - 2023 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import org.traccar.forward.EventForwarderMqtt;
 import org.traccar.forward.PositionForwarder;
 import org.traccar.forward.PositionForwarderJson;
 import org.traccar.forward.PositionForwarderKafka;
+import org.traccar.forward.PositionForwarderRedis;
 import org.traccar.forward.PositionForwarderUrl;
 import org.traccar.geocoder.AddressFormat;
 import org.traccar.geocoder.BanGeocoder;
@@ -333,6 +334,7 @@ public class MainModule extends AbstractModule {
                     return new EventForwarderKafka(config, objectMapper);
                 case "mqtt":
                     return new EventForwarderMqtt(config, objectMapper);
+                case "json":
                 default:
                     return new EventForwarderJson(config, client);
             }
@@ -349,6 +351,9 @@ public class MainModule extends AbstractModule {
                     return new PositionForwarderJson(config, client, objectMapper);
                 case "kafka":
                     return new PositionForwarderKafka(config, objectMapper);
+                case "redis":
+                    return new PositionForwarderRedis(config, objectMapper);
+                case "url":
                 default:
                     return new PositionForwarderUrl(config, client, objectMapper);
             }

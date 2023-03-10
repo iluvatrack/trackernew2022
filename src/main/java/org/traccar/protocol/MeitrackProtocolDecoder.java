@@ -420,6 +420,12 @@ public class MeitrackProtocolDecoder extends BaseProtocolDecoder {
                     case 0x15:
                         position.set(Position.KEY_INPUT, buf.readUnsignedByte());
                         break;
+                    case 0x47:
+                        int lockState = buf.readUnsignedByte();
+                        if (lockState > 0) {
+                            position.set(Position.KEY_LOCK, lockState == 2);
+                        }
+                        break;
                     case 0x97:
                         position.set(Position.KEY_THROTTLE, buf.readUnsignedByte());
                         break;
@@ -546,6 +552,18 @@ public class MeitrackProtocolDecoder extends BaseProtocolDecoder {
                         buf.readUnsignedByte(); // alarm protocol
                         buf.readUnsignedByte(); // alarm type
                         buf.skipBytes(length - 2);
+                        break;
+                    case 0xFEA8:
+                        if (buf.readUnsignedByte() > 0) {
+                            position.set(Position.KEY_BATTERY_LEVEL, buf.readUnsignedByte());
+                        } else {
+                            buf.readUnsignedByte();
+                        }
+                        buf.readUnsignedByte(); // battery 2 status
+                        buf.readUnsignedByte(); // battery 2 level
+                        buf.readUnsignedByte(); // battery 3 status
+                        buf.readUnsignedByte(); // battery 3 level
+                        buf.readUnsignedByte(); // battery alert
                         break;
                     default:
                         buf.skipBytes(length);

@@ -1,6 +1,6 @@
 package org.traccar.protocol;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.traccar.ProtocolTest;
 import org.traccar.model.Position;
 
@@ -13,6 +13,13 @@ public class HuabaoProtocolDecoderTest extends ProtocolTest {
 
         verifyNull(decoder, binary(
                 "7e010200204f07788ef67601824f4459344f544d314d4459774d4441314d444977626d5633553235536457786cba7e"));
+
+        verifyAttribute(decoder, binary(
+                "7e55019c3b8571110003399a07032310302029538631031015370500001a0c000000265700440001233703080000001001020202000a0a04028f000af401040c06ff98ffa8007e707e"),
+                "gyro", "ff98ffa8007e");
+
+        verifyPosition(decoder, binary(
+                "7e0900001f4f07788ef87d000cf0230223150215010203013800000c000b029dc58c04b99b60230223171822507e"));
 
         verifyPosition(decoder, binary(
                 "7e0200004107904226220608ca0000010000000010031dac0d004864f30000000000002212291003220104000179a7300107310100eb17000300e151000300e304000b00d801041edf340000306b007e"));
