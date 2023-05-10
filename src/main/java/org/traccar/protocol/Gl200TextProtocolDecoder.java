@@ -680,7 +680,7 @@ public class Gl200TextProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.KEY_HOURS, UnitsConverter.msFromHours(Double.parseDouble(values[index - 1])));
         }
         if (BitUtil.check(reportMask, 12)) {
-            position.set("drivingHours", Double.parseDouble(values[index++]));
+            position.set(Position.KEY_DRIVING_TIME, Double.parseDouble(values[index++]));
         }
         if (BitUtil.check(reportMask, 13)) {
             position.set("idleHours", Double.parseDouble(values[index++]));
@@ -978,7 +978,7 @@ public class Gl200TextProtocolDecoder extends BaseProtocolDecoder {
             index += 1; // device type
 
             if (BitUtil.check(mask, 0)) {
-                index += 1; // digital fuel sensor data
+                position.set(Position.KEY_FUEL_LEVEL, Integer.parseInt(data[index++], 16));
             }
 
             if (BitUtil.check(mask, 1)) {

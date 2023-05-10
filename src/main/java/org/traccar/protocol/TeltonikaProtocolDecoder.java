@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 - 2022 Anton Tananaev (anton@traccar.org)
+ * Copyright 2013 - 2023 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -231,6 +231,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         register(26, null, (p, b) -> p.set("bleTemp2", b.readShort() * 0.01));
         register(27, null, (p, b) -> p.set("bleTemp3", b.readShort() * 0.01));
         register(28, null, (p, b) -> p.set("bleTemp4", b.readShort() * 0.01));
+        register(30, fmbXXX, (p, b) -> p.set("faultCount", b.readUnsignedByte()));
         register(66, null, (p, b) -> p.set(Position.KEY_POWER, b.readUnsignedShort() * 0.001));
         register(67, null, (p, b) -> p.set(Position.KEY_BATTERY, b.readUnsignedShort() * 0.001));
         register(68, fmbXXX, (p, b) -> p.set("batteryCurrent", b.readUnsignedShort() * 0.001));
@@ -253,7 +254,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         register(182, null, (p, b) -> p.set(Position.KEY_HDOP, b.readUnsignedShort() * 0.1));
         register(199, null, (p, b) -> p.set(Position.KEY_ODOMETER_TRIP, b.readUnsignedInt()));
         register(200, fmbXXX, (p, b) -> p.set("sleepMode", b.readUnsignedByte()));
-        register(205, fmbXXX, (p, b) -> p.set("cid", b.readUnsignedShort()));
+        register(205, fmbXXX, (p, b) -> p.set("cid2g", b.readUnsignedShort()));
         register(206, fmbXXX, (p, b) -> p.set("lac", b.readUnsignedShort()));
         register(236, null, (p, b) -> {
             p.set(Position.KEY_ALARM, b.readUnsignedByte() > 0 ? Position.ALARM_GENERAL : null);
@@ -276,6 +277,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
                     break;
             }
         });
+        register(636, fmbXXX, (p, b) -> p.set("cid4g", b.readUnsignedInt()));
     }
 
     private void decodeGh3000Parameter(Position position, int id, ByteBuf buf, int length) {
@@ -366,14 +368,23 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
                 position.setNetwork(network);
             }
         } else {
-            Integer cid = (Integer) position.getAttributes().remove("cid");
+            Integer cid2g = (Integer) position.getAttributes().remove("cid2g");
+            Long cid4g = (Long) position.getAttributes().remove("cid4g");
             Integer lac = (Integer) position.getAttributes().remove("lac");
-            if (cid != null && lac != null) {
-                CellTower cellTower = CellTower.fromLacCid(getConfig(), lac, cid);
+            if (lac != null && (cid2g != null || cid4g != null)) {
+                Network network = new Network();
+                CellTower cellTower;
+                if (cid2g != null) {
+                    cellTower = CellTower.fromLacCid(getConfig(), lac, cid2g);
+                } else {
+                    cellTower = CellTower.fromLacCid(getConfig(), lac, cid4g);
+                    network.setRadioType("lte");
+                }
                 long operator = position.getInteger(Position.KEY_OPERATOR);
                 if (operator >= 1000) {
                     cellTower.setOperator(operator);
                 }
+                network.addCellTower(cellTower);
                 position.setNetwork(new Network(cellTower));
             }
         }
@@ -601,8 +612,12 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
                 int length = buf.readInt() - 4;
                 getLastLocation(position, new Date(buf.readUnsignedInt() * 1000));
                 if (isPrintable(buf, length)) {
-                    position.set(Position.KEY_RESULT,
-                            buf.readCharSequence(length, StandardCharsets.US_ASCII).toString().trim());
+                    String data = buf.readCharSequence(length, StandardCharsets.US_ASCII).toString().trim();
+                    if (data.startsWith("GTSL")) {
+                        position.set(Position.KEY_DRIVER_UNIQUE_ID, data.split("\\|")[4]);
+                    } else {
+                        position.set(Position.KEY_RESULT, data);
+                    }
                 } else {
                     position.set(Position.KEY_RESULT,
                             ByteBufUtil.hexDump(buf.readSlice(length)));
