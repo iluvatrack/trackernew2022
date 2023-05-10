@@ -127,8 +127,10 @@ public class CommandResource extends ExtendedObjectResource<Command> {
                 result = commandsManager.sendCommand(command) && result;
             }
         } else {
-            permissionsService.checkPermission(Device.class, getUserId(), entity.getDeviceId());
-            result = commandsManager.sendCommand(entity);
+          if (permissionsService.notAdmin(getUserId())) {
+              permissionsService.checkPermission(Device.class, getUserId(), entity.getDeviceId());
+              result = commandsManager.sendCommand(entity);
+          }
         }
         return result ? Response.ok(entity).build() : Response.accepted(entity).build();
     }

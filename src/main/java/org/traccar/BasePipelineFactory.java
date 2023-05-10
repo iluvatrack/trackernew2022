@@ -29,6 +29,7 @@ import org.traccar.handler.AcknowledgementHandler;
 import org.traccar.handler.ComputedAttributesHandler;
 import org.traccar.handler.CopyAttributesHandler;
 import org.traccar.handler.DefaultDataHandler;
+import org.traccar.handler.RabbitDataHandler;
 import org.traccar.handler.DistanceHandler;
 import org.traccar.handler.EngineHoursHandler;
 import org.traccar.handler.FilterHandler;
@@ -159,6 +160,7 @@ public abstract class BasePipelineFactory extends ChannelInitializer<Channel> {
                 ComputedAttributesHandler.class,
                 PositionForwardingHandler.class,
                 DefaultDataHandler.class,
+                RabbitDataHandler.class,
                 MediaEventHandler.class,
                 CommandResultEventHandler.class,
                 OverspeedEventHandler.class,
