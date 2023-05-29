@@ -488,6 +488,9 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
                     position.set(Position.KEY_EVENT, buf.readUnsignedShort());
                     buf.skipBytes(length - 2);
                     break;
+                case 0x69:
+                    position.set(Position.KEY_BATTERY, buf.readUnsignedShort() * 0.01);
+                    break;
                 case 0x80:
                     buf.readUnsignedByte(); // content
                     endIndex = buf.writerIndex() - 2;
@@ -916,14 +919,19 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
                     position.setTime(time);
                     break;
                 case 0x02:
-                    count = buf.readUnsignedByte();
+                    List<String> codes = new LinkedList<>();
+                    count = buf.readUnsignedShort();
                     for (int i = 0; i < count; i++) {
                         buf.readUnsignedInt(); // system id
                         int codeCount = buf.readUnsignedShort();
                         for (int j = 0; j < codeCount; j++) {
-                            buf.skipBytes(16); // code
+                            buf.readUnsignedInt(); // dtc
+                            buf.readUnsignedInt(); // status
+                            codes.add(buf.readCharSequence(
+                                    buf.readUnsignedShort(), StandardCharsets.US_ASCII).toString().trim());
                         }
                     }
+                    position.set(Position.KEY_DTCS, String.join(" ", codes));
                     getLastLocation(position, time);
                     decodeCoordinates(position, buf);
                     position.setTime(time);
