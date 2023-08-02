@@ -38,10 +38,12 @@ import org.traccar.database.RabbitManager;
 import org.traccar.database.StatisticsManager;
 import org.traccar.forward.EventForwarder;
 import org.traccar.forward.EventForwarderJson;
+import org.traccar.forward.EventForwarderAmqp;
 import org.traccar.forward.EventForwarderKafka;
 import org.traccar.forward.EventForwarderMqtt;
 import org.traccar.forward.PositionForwarder;
 import org.traccar.forward.PositionForwarderJson;
+import org.traccar.forward.PositionForwarderAmqp;
 import org.traccar.forward.PositionForwarderKafka;
 import org.traccar.forward.PositionForwarderRedis;
 import org.traccar.forward.PositionForwarderUrl;
@@ -361,6 +363,8 @@ public class MainModule extends AbstractModule {
         if (config.hasKey(Keys.EVENT_FORWARD_URL)) {
             String forwardType = config.getString(Keys.EVENT_FORWARD_TYPE);
             switch (forwardType) {
+                case "amqp":
+                    return new EventForwarderAmqp(config, objectMapper);
                 case "kafka":
                     return new EventForwarderKafka(config, objectMapper);
                 case "mqtt":
@@ -380,6 +384,8 @@ public class MainModule extends AbstractModule {
             switch (config.getString(Keys.FORWARD_TYPE)) {
                 case "json":
                     return new PositionForwarderJson(config, client, objectMapper);
+                case "amqp":
+                    return new PositionForwarderAmqp(config, objectMapper);
                 case "kafka":
                     return new PositionForwarderKafka(config, objectMapper);
                 case "redis":
