@@ -18,10 +18,11 @@ package org.traccar.model;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.traccar.storage.QueryIgnore;
 import org.traccar.storage.StorageName;
+
+import java.util.Date;
 
 @StorageName("tc_positions")
 public class Position extends Message {
@@ -149,6 +150,10 @@ public class Position extends Message {
     public static final String ALARM_FUEL_LEAK = "fuelLeak";
     public static final String ALARM_TAMPERING = "tampering";
     public static final String ALARM_REMOVING = "removing";
+
+    //Untuk CARD AVL
+    public static final String TOTAL_TAG = "totalTag";
+    public static final String PREFIX_HUMIDITY = "hum";
 
     public Position() {
     }

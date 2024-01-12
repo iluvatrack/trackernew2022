@@ -88,11 +88,13 @@ dependencies {
     implementation "redis.clients:jedis:5.0.2"
     implementation "com.google.firebase:firebase-admin:9.2.0"
     implementation "com.nimbusds:oauth2-oidc-sdk:11.6"
-    implementation "com.rabbitmq:amqp-client:5.20.0"
     implementation "com.warrenstrange:googleauth:1.5.0"
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
     testImplementation "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
     testImplementation "org.mockito:mockito-core:5.7.0"
+   
+    //Rabbit
+    implementation "com.rabbitmq:amqp-client:5.20.0"
 }
 
 test {

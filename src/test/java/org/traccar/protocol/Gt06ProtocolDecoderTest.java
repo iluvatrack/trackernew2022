@@ -490,6 +490,12 @@ public class Gt06ProtocolDecoderTest extends ProtocolTest {
                 "78785195140a020c2914055D4A800209D9C014009300004556454e545f3335333337363131303032333139365f30303030303030305f323032305f31305f30325f31345f34315f32305f30352e6d70340004e3a60d0a"),
                 Position.KEY_ALARM, Position.ALARM_ACCIDENT);
 
+        //weird year to 2099
+        verifyPosition(decoder, binary("78781f126309070f2539c900aa1c990b6b18e921111901fe0a0084002cd20012b8010d0a"));
+
+        //weird year to 2000
+        verifyPosition(decoder, binary("78781f1200010504112ec90097c15e0b4d94040010da01fe0a2fc000c39a01ef2de20d0a"));
+
     }
 
 }

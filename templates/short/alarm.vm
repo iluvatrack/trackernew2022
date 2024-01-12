@@ -77,4 +77,5 @@
 #elseif($alarmName == "removing")
 	#set($alarmName = "Removing")
 #end
-$device.name alarm: $alarmName at $dateTool.format("YYYY-MM-dd HH:mm:ss", $event.eventTime, $locale, $timezone)
+
+$device.name alarm: #{if}($alarmName.equals("Temperature"))Temperature ($position.attributes.temperature°C)#{else}$alarmName#{end} at $dateTool.format("YYYY-MM-dd HH:mm:ss", $event.eventTime, $locale, $timezone)
