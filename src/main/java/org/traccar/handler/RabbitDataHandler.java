@@ -7,7 +7,7 @@ import org.traccar.BaseDataHandler;
 import org.traccar.database.RabbitManager;
 import org.traccar.model.Position;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 @ChannelHandler.Sharable
 public class RabbitDataHandler extends BaseDataHandler {
