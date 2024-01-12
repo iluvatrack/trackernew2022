@@ -17,7 +17,7 @@ package org.traccar;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr353.JSR353Module;
+import com.fasterxml.jackson.datatype.jsonp.JSONPModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
@@ -94,10 +94,10 @@ import org.traccar.storage.Storage;
 import org.traccar.web.WebServer;
 import org.traccar.api.security.LoginService;
 
-import javax.annotation.Nullable;
-import javax.inject.Singleton;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import jakarta.annotation.Nullable;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -135,7 +135,7 @@ public class MainModule extends AbstractModule {
         if (config.getBoolean(Keys.WEB_SANITIZE)) {
             objectMapper.registerModule(new SanitizerModule());
         }
-        objectMapper.registerModule(new JSR353Module());
+        objectMapper.registerModule(new JSONPModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         return objectMapper;
     }
@@ -201,7 +201,6 @@ public class MainModule extends AbstractModule {
         if (config.getBoolean(Keys.GEOCODER_ENABLE)) {
             String type = config.getString(Keys.GEOCODER_TYPE, "google");
             String url = config.getString(Keys.GEOCODER_URL);
-            String id = config.getString(Keys.GEOCODER_ID);
             String key = config.getString(Keys.GEOCODER_KEY);
             String language = config.getString(Keys.GEOCODER_LANGUAGE);
             String formatString = config.getString(Keys.GEOCODER_FORMAT);
@@ -244,7 +243,7 @@ public class MainModule extends AbstractModule {
                     geocoder = new BanGeocoder(client, cacheSize, addressFormat);
                     break;
                 case "here":
-                    geocoder = new HereGeocoder(client, url, id, key, language, cacheSize, addressFormat);
+                    geocoder = new HereGeocoder(client, url, key, language, cacheSize, addressFormat);
                     break;
                 case "mapmyindia":
                     geocoder = new MapmyIndiaGeocoder(client, url, key, cacheSize, addressFormat);
@@ -304,7 +303,7 @@ public class MainModule extends AbstractModule {
             switch (type) {
                 case "overpass":
                 default:
-                    return new OverpassSpeedLimitProvider(client, url);
+                    return new OverpassSpeedLimitProvider(config, client, url);
             }
         }
         return null;

@@ -22,13 +22,18 @@ import org.traccar.TrackerServer;
 import org.traccar.config.Config;
 import org.traccar.model.Command;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class GatorProtocol extends BaseProtocol {
 
     @Inject
     public GatorProtocol(Config config) {
-        setSupportedDataCommands(Command.TYPE_POSITION_SINGLE);
+        setSupportedDataCommands(
+                Command.TYPE_POSITION_SINGLE,
+                Command.TYPE_ENGINE_RESUME,
+                Command.TYPE_ENGINE_STOP,
+                Command.TYPE_SET_SPEED_LIMIT,
+                Command.TYPE_SET_ODOMETER);
         addServer(new TrackerServer(config, getName(), false) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline, Config config) {

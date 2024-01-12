@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 - 2022 Anton Tananaev (anton@traccar.org)
+ * Copyright 2019 - 2023 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -341,6 +341,15 @@ public final class Keys {
             0.0);
 
     /**
+     * Speed limit threshold multiplier. For example, if the speed limit is 100, but we only want to generate an event
+     * if the speed is higher than 105, this parameter can be set to 1.05. Default multiplier is 1.0.
+     */
+    public static final ConfigKey<Double> EVENT_OVERSPEED_THRESHOLD_MULTIPLIER = new DoubleConfigKey(
+            "event.overspeed.thresholdMultiplier",
+            List.of(KeyType.CONFIG),
+            1.0);
+
+    /**
      * Minimal over speed duration to trigger the event. Value in seconds.
      */
     public static final ConfigKey<Long> EVENT_OVERSPEED_MINIMAL_DURATION = new LongConfigKey(
@@ -478,14 +487,6 @@ public final class Keys {
      */
     public static final ConfigKey<Boolean> DATABASE_THROTTLE_UNKNOWN = new BooleanConfigKey(
             "database.throttleUnknown",
-            List.of(KeyType.CONFIG));
-
-    /**
-     * By default, server syncs with the database if it encounters and unknown device. This flag allows to disable that
-     * behavior to improve performance in some cases.
-     */
-    public static final ConfigKey<Boolean> DATABASE_IGNORE_UNKNOWN = new BooleanConfigKey(
-            "database.ignoreUnknown",
             List.of(KeyType.CONFIG));
 
     /**
@@ -655,7 +656,7 @@ public final class Keys {
     /**
      * OpenID Connect Authorization URL.
      * This can usually be found in the documentation of your identity provider or by using the well-known
-     * configuration endpoint, eg. https://auth.example.com//.well-known/openid-configuration
+     * configuration endpoint, e.g. https://auth.example.com//.well-known/openid-configuration
      * Required to enable SSO if openid.issuerUrl is not set.
      */
     public static final ConfigKey<String> OPENID_AUTH_URL = new StringConfigKey(
@@ -827,6 +828,20 @@ public final class Keys {
             "web.cacheControl",
             List.of(KeyType.CONFIG),
             "max-age=3600,public");
+
+    /**
+     * Enable TOTP authentication on the server.
+     */
+    public static final ConfigKey<Boolean> WEB_TOTP_ENABLE = new BooleanConfigKey(
+            "totpEnable",
+            List.of(KeyType.SERVER));
+
+    /**
+     * Server attribute that indicates that TOTP authentication is required for new users.
+     */
+    public static final ConfigKey<Boolean> WEB_TOTP_FORCE = new BooleanConfigKey(
+            "totpForce",
+            List.of(KeyType.SERVER));
 
     /**
      * Host for raw data forwarding.
@@ -1145,6 +1160,15 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * If the event time is too old, we should not send notifications. This parameter is the threshold value in
+     * milliseconds. Default value is 15 minutes.
+     */
+    public static final ConfigKey<Long> NOTIFICATOR_TIME_THRESHOLD = new LongConfigKey(
+            "notificator.timeThreshold",
+            List.of(KeyType.CONFIG),
+            15 * 60 * 1000L);
+
+    /**
      * Traccar notification API key.
      */
     public static final ConfigKey<String> NOTIFICATOR_TRACCAR_KEY = new StringConfigKey(
@@ -1191,6 +1215,34 @@ public final class Keys {
      */
     public static final ConfigKey<Boolean> NOTIFICATOR_TELEGRAM_SEND_LOCATION = new BooleanConfigKey(
             "notificator.telegram.sendLocation",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Enable user expiration email notification.
+     */
+    public static final ConfigKey<Boolean> NOTIFICATION_EXPIRATION_USER = new BooleanConfigKey(
+            "notification.expiration.user",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * User expiration reminder. Value in milliseconds.
+     */
+    public static final ConfigKey<Long> NOTIFICATION_EXPIRATION_USER_REMINDER = new LongConfigKey(
+            "notification.expiration.user.reminder",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Enable device expiration email notification.
+     */
+    public static final ConfigKey<Boolean> NOTIFICATION_EXPIRATION_DEVICE = new BooleanConfigKey(
+            "notification.expiration.device",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Device expiration reminder. Value in milliseconds.
+     */
+    public static final ConfigKey<Long> NOTIFICATION_EXPIRATION_DEVICE_REMINDER = new LongConfigKey(
+            "notification.expiration.device.reminder",
             List.of(KeyType.CONFIG));
 
     /**
@@ -1473,10 +1525,17 @@ public final class Keys {
             List.of(KeyType.CONFIG, KeyType.DEVICE));
 
     /**
-     * Enable computed attributes processing.
+     * Include device attributes in the computed attribute context.
      */
     public static final ConfigKey<Boolean> PROCESSING_COMPUTED_ATTRIBUTES_DEVICE_ATTRIBUTES = new BooleanConfigKey(
             "processing.computedAttributes.deviceAttributes",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Include last position attributes in the computed attribute context.
+     */
+    public static final ConfigKey<Boolean> PROCESSING_COMPUTED_ATTRIBUTES_LAST_ATTRIBUTES = new BooleanConfigKey(
+            "processing.computedAttributes.lastAttributes",
             List.of(KeyType.CONFIG));
 
     /**
@@ -1521,13 +1580,6 @@ public final class Keys {
      */
     public static final ConfigKey<String> GEOCODER_URL = new StringConfigKey(
             "geocoder.url",
-            List.of(KeyType.CONFIG));
-
-    /**
-     * App id for use with Here provider.
-     */
-    public static final ConfigKey<String> GEOCODER_ID = new StringConfigKey(
-            "geocoder.id",
             List.of(KeyType.CONFIG));
 
     /**
@@ -1634,6 +1686,13 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * Process geolocation only when Wi-Fi information is available. This makes the result more accurate.
+     */
+    public static final ConfigKey<Boolean> GEOLOCATION_REQUIRE_WIFI = new BooleanConfigKey(
+            "geolocation.requireWifi",
+            List.of(KeyType.CONFIG));
+
+    /**
      * Default MCC value to use if device doesn't report MCC.
      */
     public static final ConfigKey<Integer> GEOLOCATION_MCC = new IntegerConfigKey(
@@ -1667,6 +1726,14 @@ public final class Keys {
     public static final ConfigKey<String> SPEED_LIMIT_URL = new StringConfigKey(
             "speedLimit.url",
             List.of(KeyType.CONFIG));
+
+    /**
+     * Search radius for speed limit. Value is in meters. Default value is 100.
+     */
+    public static final ConfigKey<Integer> SPEED_LIMIT_ACCURACY = new IntegerConfigKey(
+            "speedLimit.accuracy",
+            List.of(KeyType.CONFIG),
+            100);
 
     /**
      * Override latitude sign / hemisphere. Useful in cases where value is incorrect because of device bug. Value can be

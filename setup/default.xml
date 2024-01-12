@@ -290,5 +290,10 @@
     <entry key='vlt.port'>5246</entry>
     <entry key='transync.port'>5247</entry>
     <entry key='t622iridium.port'>5248</entry>
+    <entry key='pui.port'>5249</entry>
+    <entry key='nto.port'>5250</entry>
+    <entry key='ramac.port'>5251</entry>
+    <entry key='positrex.port'>5252</entry>
+    <entry key='dragino.port'>5253</entry>
 
 </properties>

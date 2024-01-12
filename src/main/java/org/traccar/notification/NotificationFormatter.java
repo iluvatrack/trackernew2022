@@ -19,6 +19,7 @@ package org.traccar.notification;
 import org.apache.velocity.VelocityContext;
 import org.traccar.helper.model.UserUtil;
 import org.traccar.model.Device;
+import org.traccar.model.Driver;
 import org.traccar.model.Event;
 import org.traccar.model.Geofence;
 import org.traccar.model.Maintenance;
@@ -27,8 +28,8 @@ import org.traccar.model.Server;
 import org.traccar.model.User;
 import org.traccar.session.cache.CacheManager;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class NotificationFormatter {
@@ -66,7 +67,8 @@ public class NotificationFormatter {
         }
         String driverUniqueId = event.getString(Position.KEY_DRIVER_UNIQUE_ID);
         if (driverUniqueId != null) {
-            velocityContext.put("driver", cacheManager.findDriverByUniqueId(device.getId(), driverUniqueId));
+            velocityContext.put("driver", cacheManager.getDeviceObjects(device.getId(), Driver.class).stream()
+                    .filter(driver -> driver.getUniqueId().equals(driverUniqueId)).findFirst().orElse(null));
         }
 
         return textTemplateFormatter.formatMessage(velocityContext, event.getType(), templatePath);
