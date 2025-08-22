@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 - 2024 Anton Tananaev (anton@traccar.org)
+ * Copyright 2015 - 2025 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,12 @@ import java.net.SocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
+import java.util.Set;
 
 public class TrvProtocolDecoder extends BaseProtocolDecoder {
+
+    private static final Set<String> IGNORE_RESPONSE = Set.of(
+        "AP12", "AP14", "AP33", "AP34", "AP40", "AP76", "AP77", "AP84", "AP85", "AP86", "AP87");
 
     public TrvProtocolDecoder(Protocol protocol) {
         super(protocol);
@@ -178,15 +182,17 @@ public class TrvProtocolDecoder extends BaseProtocolDecoder {
             if (type.equals("AP00") && id.equals("IW")) {
                 String time = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
                 channel.writeAndFlush(new NetworkMessage(responseHeader + "," + time + ",0#", remoteAddress));
-            } else if (type.equals("AP14")) {
+            } else if (type.equals("AP14") && !id.equals("IW")) {
                 channel.writeAndFlush(new NetworkMessage(responseHeader + ",0.000,0.000#", remoteAddress));
-            } else {
+            } else if (!IGNORE_RESPONSE.contains(type)
+                    && !sentence.substring(responseHeader.length() + 1).matches("^\\d{6}$")) {
                 channel.writeAndFlush(new NetworkMessage(responseHeader + "#", remoteAddress));
             }
         }
 
         if (type.equals("AP00")) {
-            getDeviceSession(channel, remoteAddress, sentence.substring(id.length() + type.length()));
+            String imei = sentence.split(",")[0].substring(id.length() + type.length());
+            getDeviceSession(channel, remoteAddress, imei);
             return null;
         }
 
@@ -249,15 +255,8 @@ public class TrvProtocolDecoder extends BaseProtocolDecoder {
 
             if (parser.hasNext()) {
                 switch (parser.nextInt()) {
-                    case 1:
-                        position.set(Position.KEY_ALARM, Position.ALARM_SOS);
-                        break;
-                    case 5:
-                    case 6:
-                        position.set(Position.KEY_ALARM, Position.ALARM_FALL_DOWN);
-                        break;
-                    default:
-                        break;
+                    case 1 -> position.addAlarm(Position.ALARM_SOS);
+                    case 5, 6 -> position.addAlarm(Position.ALARM_FALL_DOWN);
                 }
             }
 
@@ -332,28 +331,24 @@ public class TrvProtocolDecoder extends BaseProtocolDecoder {
             String[] values = sentence.split(",");
 
             switch (type) {
-                case "AP49":
-                    position.set(Position.KEY_HEART_RATE, Integer.parseInt(values[1]));
-                    break;
-                case "APHT":
+                case "AP49" -> position.set(Position.KEY_HEART_RATE, Integer.parseInt(values[1]));
+                case "APHT" -> {
                     position.set(Position.KEY_HEART_RATE, Integer.parseInt(values[1]));
                     position.set("pressureSystolic", Integer.parseInt(values[2]));
                     position.set("pressureDiastolic", Integer.parseInt(values[3]));
-                    break;
-                case "APHP":
+                }
+                case "APHP" -> {
                     position.set(Position.KEY_HEART_RATE, Integer.parseInt(values[1]));
                     position.set("pressureSystolic", Integer.parseInt(values[2]));
                     position.set("pressureDiastolic", Integer.parseInt(values[3]));
                     position.set("spo2", Integer.parseInt(values[4]));
                     position.set("bloodSugar", Double.parseDouble(values[5]));
                     position.set("temperature", Double.parseDouble(values[6]));
-                    break;
-                case "AP50":
+                }
+                case "AP50" -> {
                     position.set("temperature", Double.parseDouble(values[1]));
                     position.set(Position.KEY_BATTERY_LEVEL, Integer.parseInt(values[2]));
-                    break;
-                default:
-                    break;
+                }
             }
 
             return position;

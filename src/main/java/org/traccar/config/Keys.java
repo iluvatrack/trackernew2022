@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 - 2024 Anton Tananaev (anton@traccar.org)
+ * Copyright 2019 - 2025 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,6 +171,13 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * Frame mask for Atrack protocol.
+     */
+    public static final ConfigSuffix<Integer> PROTOCOL_FRAME_MASK = new IntegerConfigSuffix(
+            ".frameMask",
+            List.of(KeyType.CONFIG));
+
+    /**
      * Protocol configuration. Required for some devices for decoding incoming data.
      */
     public static final ConfigSuffix<String> PROTOCOL_CONFIG = new StringConfigSuffix(
@@ -208,7 +215,7 @@ public final class Keys {
     /**
      * Suntech HBM configuration value.
      */
-    public static final ConfigKey<Boolean> PROTOCOL_HBM = new BooleanConfigKey(
+    public static final ConfigKey<Integer> PROTOCOL_HBM = new IntegerConfigKey(
             "suntech.hbm",
             List.of(KeyType.CONFIG, KeyType.DEVICE));
 
@@ -298,7 +305,8 @@ public final class Keys {
      */
     public static final ConfigKey<Long> SERVER_BUFFERING_THRESHOLD = new LongConfigKey(
             "server.buffering.threshold",
-            List.of(KeyType.CONFIG));
+            List.of(KeyType.CONFIG),
+            3000L);
 
     /**
      * Server wide connection timeout value in seconds. See protocol timeout for more information.
@@ -310,9 +318,25 @@ public final class Keys {
     /**
      * Send device responses immediately before writing it in the database.
      */
-    public static final ConfigKey<Boolean> SERVER_INSTANT_ACKNOWLEDGEMENT = new BooleanConfigKey(
-            "server.instantAcknowledgement",
+    public static final ConfigKey<Boolean> SERVER_DELAY_ACKNOWLEDGEMENT = new BooleanConfigKey(
+            "server.delayAcknowledgement",
             List.of(KeyType.CONFIG));
+
+    /**
+     * Number of Netty boss threads. If not specified or zero, Netty default value is used.
+     */
+    public static final ConfigKey<Integer> SERVER_NETTY_BOSS_THREADS = new IntegerConfigKey(
+            "server.nettyBossThreads",
+            List.of(KeyType.CONFIG),
+            0);
+
+    /**
+     * Number of Netty worker threads. If not specified or zero, Netty default value is used.
+     */
+    public static final ConfigKey<Integer> SERVER_NETTY_WORKER_THREADS = new IntegerConfigKey(
+            "server.nettyThreads",
+            List.of(KeyType.CONFIG),
+            0);
 
     /**
      * Address for uploading aggregated anonymous usage statistics. Uploaded information is the same you can see on the
@@ -416,15 +440,6 @@ public final class Keys {
             "event.motion.speedThreshold",
             List.of(KeyType.CONFIG, KeyType.DEVICE),
             0.01);
-
-    /**
-     * Global polyline geofence distance. Within that distance from the polyline, point is considered within the
-     * geofence. Each individual geofence can also has 'polylineDistance' attribute which will take precedence.
-     */
-    public static final ConfigKey<Double> GEOFENCE_POLYLINE_DISTANCE = new DoubleConfigKey(
-            "geofence.polylineDistance",
-            List.of(KeyType.CONFIG),
-            25.0);
 
     /**
      * Enable in-memory database instead of an SQL database.
@@ -699,6 +714,15 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * OpenID Connect group scope claim name.
+     * If this is not provided, Traccar will use name "groups" scope.
+     */
+    public static final ConfigKey<String> OPENID_GROUPS_CLAIM_NAME = new StringConfigKey(
+            "openid.groupsClaimName",
+            List.of(KeyType.CONFIG),
+            "groups");
+
+    /**
      * OpenID Connect group to restrict access to.
      * If this is not provided, all OpenID users will have access to Traccar.
      * This option will only work if your OpenID provider supports the groups scope.
@@ -836,12 +860,20 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
-     * Cache control header value. By default resources are cached for one hour.
+     * Cache control header value. By default, resources are cached for one hour.
      */
     public static final ConfigKey<String> WEB_CACHE_CONTROL = new StringConfigKey(
             "web.cacheControl",
             List.of(KeyType.CONFIG),
             "max-age=3600,public");
+
+    /**
+     * Path to localization files.
+     */
+    public static final ConfigKey<String> WEB_LOCALIZATION_PATH = new StringConfigKey(
+            "web.localizationPath",
+            List.of(KeyType.CONFIG),
+            "./templates/translations");
 
     /**
      * Enable TOTP authentication on the server.
@@ -894,7 +926,7 @@ public final class Keys {
      */
     public static final ConfigKey<String> FORWARD_URL = new StringConfigKey(
             "forward.url",
-            List.of(KeyType.CONFIG));
+            List.of(KeyType.CONFIG, KeyType.DEVICE));
 
     /**
      * Additional HTTP header, can be used for authorization.
@@ -1166,6 +1198,35 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * Command sender type for the device. This overrides standard data or text commands with an API-based commands.
+     * For example, it can be Traccar Client push commands.
+     */
+    public static final ConfigKey<String> COMMAND_SENDER = new StringConfigKey(
+            "command.sender",
+            List.of(KeyType.DEVICE));
+
+    /**
+     * Firebase service account JSON for push commands.
+     */
+    public static final ConfigKey<String> COMMAND_CLIENT_SERVICE_ACCOUNT = new StringConfigKey(
+            "command.client.serviceAccount",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Google Find Hub service URL.
+     */
+    public static final ConfigKey<String> COMMAND_FIND_HUB_URL = new StringConfigKey(
+            "command.findHub.url",
+            List.of(KeyType.DEVICE));
+
+    /**
+     * Google Find Hub service API key.
+     */
+    public static final ConfigKey<String> COMMAND_FIND_HUB_KEY = new StringConfigKey(
+            "command.findHub.key",
+            List.of(KeyType.DEVICE));
+
+    /**
      * Enabled notification options. Comma-separated string is expected.
      * Example: web,mail,sms
      */
@@ -1191,7 +1252,7 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
-     * Firebase service account JSON.
+     * Firebase service account JSON for push notifications.
      */
     public static final ConfigKey<String> NOTIFICATOR_FIREBASE_SERVICE_ACCOUNT = new StringConfigKey(
             "notificator.firebase.serviceAccount",
@@ -1330,7 +1391,7 @@ public final class Keys {
      */
     public static final ConfigKey<Boolean> REPORT_IGNORE_ODOMETER = new BooleanConfigKey(
             "report.ignoreOdometer",
-            List.of(KeyType.CONFIG),
+            List.of(KeyType.CONFIG, KeyType.DEVICE),
             false);
 
     /**
@@ -1537,6 +1598,13 @@ public final class Keys {
      */
     public static final ConfigKey<Boolean> PROCESSING_REMOTE_ADDRESS_ENABLE = new BooleanConfigKey(
             "processing.remoteAddress.enable",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Use linked driver id for positions if a device does not send driver id.
+     */
+    public static final ConfigKey<Boolean> PROCESSING_USE_LINKED_DRIVER = new BooleanConfigKey(
+            "processing.useLinkedDriver",
             List.of(KeyType.CONFIG));
 
     /**
@@ -1811,6 +1879,15 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * If this parameter is set, Traccar will monitor drops in the number of stored messages. If it drops more than
+     * the threshold, it will mark service as failing for systemd. Threshold is a value from 0.0 to 1.0. For example,
+     * value 0.7 means that the number of messages in the last period is only 70% of what it was in the previous.
+     */
+    public static final ConfigKey<Double> WEB_HEALTH_CHECK_DROP_THRESHOLD = new DoubleConfigKey(
+            "web.healthCheck.dropThreshold",
+            List.of(KeyType.CONFIG));
+
+    /**
      * Sets SameSite cookie attribute value.
      * Supported options: Lax, Strict, None.
      */
@@ -1928,8 +2005,8 @@ public final class Keys {
             "time,position,speed,course,accuracy,result");
 
     /**
-     * Broadcast method. Available options are "multicast" and "redis". By default (if the value is not
-     * specified or does not matches available options) server disables broadcast.
+     * Broadcast method. Available options are "multicast" and "redis". By default, (if the value is not
+     * specified or does not match available options) server disables broadcast.
      */
     public static final ConfigKey<String> BROADCAST_TYPE = new StringConfigKey(
             "broadcast.type",
@@ -1954,6 +2031,13 @@ public final class Keys {
      */
     public static final ConfigKey<Integer> BROADCAST_PORT = new IntegerConfigKey(
             "broadcast.port",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Flag to mark secondary servers. Some tasks, like scheduled reports, will be executed on the main server only.
+     */
+    public static final ConfigKey<Boolean> BROADCAST_SECONDARY = new BooleanConfigKey(
+            "broadcast.secondary",
             List.of(KeyType.CONFIG));
 
 }

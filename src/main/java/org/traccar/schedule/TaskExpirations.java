@@ -36,7 +36,7 @@ import org.traccar.storage.query.Request;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class TaskExpirations implements ScheduleTask {
+public class TaskExpirations extends SingleScheduleTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskExpirations.class);
 
@@ -74,8 +74,8 @@ public class TaskExpirations implements ScheduleTask {
             Server server, User user, String template) throws MessagingException {
         var velocityContext = textTemplateFormatter.prepareContext(server, user);
         velocityContext.put("expiration", user.getExpirationTime());
-        var fullMessage = textTemplateFormatter.formatMessage(velocityContext, template, "full");
-        mailManager.sendMessage(user, true, fullMessage.getSubject(), fullMessage.getBody());
+        var fullMessage = textTemplateFormatter.formatMessage(velocityContext, template, false);
+        mailManager.sendMessage(user, true, fullMessage.subject(), fullMessage.body());
     }
 
     private void sendDeviceExpiration(
@@ -86,8 +86,8 @@ public class TaskExpirations implements ScheduleTask {
             var velocityContext = textTemplateFormatter.prepareContext(server, user);
             velocityContext.put("expiration", device.getExpirationTime());
             velocityContext.put("device", device);
-            var fullMessage = textTemplateFormatter.formatMessage(velocityContext, template, "full");
-            mailManager.sendMessage(user, true, fullMessage.getSubject(), fullMessage.getBody());
+            var fullMessage = textTemplateFormatter.formatMessage(velocityContext, template, false);
+            mailManager.sendMessage(user, true, fullMessage.subject(), fullMessage.body());
         }
     }
 

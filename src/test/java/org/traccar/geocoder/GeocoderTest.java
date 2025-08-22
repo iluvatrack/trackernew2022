@@ -20,7 +20,7 @@ public class GeocoderTest {
     @Disabled
     @Test
     public void testGoogle() {
-        Geocoder geocoder = new GoogleGeocoder(client, null, null, 0, new AddressFormat());
+        Geocoder geocoder = new GoogleGeocoder(client, null, null, null, 0, new AddressFormat());
         String address = geocoder.getAddress(31.776797, 35.211489, null);
         assertEquals("1 Ibn Shaprut St, Jerusalem, Jerusalem District, IL", address);
     }
@@ -55,7 +55,7 @@ public class GeocoderTest {
     public void testGeocodeFarm() {
         Geocoder geocoder = new GeocodeFarmGeocoder(client, null, null, 0, new AddressFormat());
         String address = geocoder.getAddress(34.116302, -118.051519, null);
-        assertEquals("Estrella Avenue, Arcadia, California, United States", address);
+        assertEquals("604 Estrella Ave, Arcadia, CA, United States", address);
     }
 
     @Disabled

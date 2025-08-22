@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 - 2024 Anton Tananaev (anton@traccar.org)
+ * Copyright 2020 - 2025 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.traccar.config.Keys;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.Client;
+
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -45,8 +46,7 @@ public class TaskHealthCheck implements ScheduleTask {
     public TaskHealthCheck(Config config, Client client) {
         this.config = config;
         this.client = client;
-        if (!config.getBoolean(Keys.WEB_DISABLE_HEALTH_CHECK)
-                && System.getProperty("os.name").toLowerCase().startsWith("linux")) {
+        if (!config.getBoolean(Keys.WEB_DISABLE_HEALTH_CHECK) && System.getenv("NOTIFY_SOCKET") != null) {
             try {
                 systemD = Native.load("systemd", SystemD.class);
                 String watchdogTimer = System.getenv("WATCHDOG_USEC");
@@ -66,7 +66,7 @@ public class TaskHealthCheck implements ScheduleTask {
     private String getUrl() {
         String address = config.getString(Keys.WEB_ADDRESS, "localhost");
         int port = config.getInteger(Keys.WEB_PORT);
-        return "http://" + address + ":" + port + "/api/server";
+        return "http://" + address + ":" + port + "/api/health";
     }
 
     @Override
@@ -82,19 +82,10 @@ public class TaskHealthCheck implements ScheduleTask {
         if (System.currentTimeMillis() > gracePeriod) {
             int status = client.target(getUrl()).request().get().getStatus();
             if (status == 200) {
-                notifyWatchdog();
-            } else {
-                LOGGER.warn("Health check failed with status {}", status);
+                systemD.sd_notify(0, "WATCHDOG=1");
             }
         } else {
-            notifyWatchdog();
-        }
-    }
-
-    private void notifyWatchdog() {
-        int result = systemD.sd_notify(0, "WATCHDOG=1");
-        if (result < 0) {
-            LOGGER.warn("Health check notify error {}", result);
+            systemD.sd_notify(0, "WATCHDOG=1");
         }
     }
 

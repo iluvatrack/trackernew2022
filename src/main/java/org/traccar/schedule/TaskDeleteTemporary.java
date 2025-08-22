@@ -28,7 +28,7 @@ import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class TaskDeleteTemporary implements ScheduleTask {
+public class TaskDeleteTemporary extends SingleScheduleTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskDeleteTemporary.class);
 
@@ -52,7 +52,7 @@ public class TaskDeleteTemporary implements ScheduleTask {
            storage.removeObject(User.class, new Request(
                     new Condition.And(
                             new Condition.Equals("temporary", true),
-                            new Condition.Compare("expirationTime", "<", "time", new Date()))));
+                            new Condition.Compare("expirationTime", "<", new Date()))));
         } catch (StorageException e) {
             LOGGER.warn("Failed to delete temporary users", e);
         }
