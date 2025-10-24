@@ -20,14 +20,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Custom resource untuk menampilkan daftar foto (media) yang disimpan Traccar
- * Kompatibel dengan MediaFilter & MediaManager kamu
+ * Custom endpoint publik untuk menampilkan daftar foto dari Traccar
+ * Path endpoint: /api/mediafiles/{uniqueId}?from=...&to=...
+ * Tidak membutuhkan login session (tidak difilter oleh MediaFilter)
  */
-@Path("media")
+@Path("mediafiles")
 @Produces(MediaType.APPLICATION_JSON)
 public class MediaResource {
 
-    // Path penyimpanan media di server kamu
+    // Lokasi folder media di server Traccar
     private static final java.nio.file.Path MEDIA_ROOT = java.nio.file.Paths.get("/opt/traccar/media");
 
     @GET
@@ -59,7 +60,7 @@ public class MediaResource {
                 String fileName = file.getFileName().toString();
                 String timestampStr = fileName.replace(".jpg", "");
 
-                // Nama file = yyyyMMddHHmmss
+                // Format nama file = yyyyMMddHHmmss
                 LocalDateTime ts;
                 try {
                     ts = LocalDateTime.parse(timestampStr, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
@@ -67,7 +68,7 @@ public class MediaResource {
                     continue;
                 }
 
-                // Filter waktu
+                // Filter berdasarkan rentang waktu (jika ada)
                 if (fromTime != null && toTime != null) {
                     if (ts.isBefore(fromTime) || ts.isAfter(toTime)) {
                         continue;
@@ -77,6 +78,7 @@ public class MediaResource {
                 Map<String, Object> item = new LinkedHashMap<>();
                 item.put("fileName", fileName);
                 item.put("timestamp", ts.toString());
+                // URL foto tetap memakai endpoint bawaan Traccar (yang difilter)
                 item.put("url", "/api/media/" + uniqueId + "/" + fileName);
                 photos.add(item);
             }
