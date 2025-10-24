@@ -170,13 +170,21 @@ public class WebServer implements LifecycleObject {
                 DateParameterConverterProvider.class,
                 SecurityRequestFilter.class,
                 CorsResponseFilter.class,
-                ResourceErrorHandler.class,
-                org.traccar.api.resource.MediaResource.class);
+                ResourceErrorHandler.class);
         resourceConfig.packages(ServerResource.class.getPackage().getName());
         if (resourceConfig.getClasses().stream().filter(ServerResource.class::equals).findAny().isEmpty()) {
             LOGGER.warn("Failed to load API resources");
         }
         servletHandler.addServlet(new ServletHolder(new ServletContainer(resourceConfig)), "/api/*");
+
+        // === 3️⃣ Endpoint publik tanpa login untuk MediaResource ===
+        ResourceConfig publicApi = new ResourceConfig();
+        publicApi.registerClasses(
+                JacksonFeature.class,
+                ObjectMapperContextResolver.class,
+                org.traccar.api.resource.MediaResource.class // hanya MediaResource
+        );
+        servletHandler.addServlet(new ServletHolder(new ServletContainer(publicApi)), "/public/mediafiles/*");
     }
 
     private void initSessionConfig(ServletContextHandler servletHandler) {
