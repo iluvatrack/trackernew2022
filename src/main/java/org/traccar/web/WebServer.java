@@ -17,6 +17,11 @@ package org.traccar.web;
 
 import com.google.inject.Injector;
 import com.google.inject.servlet.GuiceFilter;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.SessionCookieConfig;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpCookie;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
@@ -32,8 +37,10 @@ import org.eclipse.jetty.server.session.JDBCSessionDataStoreFactory;
 import org.eclipse.jetty.server.session.SessionCache;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -50,11 +57,6 @@ import org.traccar.config.Config;
 import org.traccar.config.Keys;
 import org.traccar.helper.ObjectMapperContextResolver;
 
-import jakarta.servlet.DispatcherType;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.SessionCookieConfig;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
@@ -193,6 +195,17 @@ public class WebServer implements LifecycleObject {
         );
         ServletHolder publicHolder = new ServletHolder(new ServletContainer(publicApi));
         servletHandler.addServlet(publicHolder, "/public/*");
+
+        // === Tambahkan CrossOriginFilter untuk endpoint publik ===
+        FilterHolder cors = new FilterHolder(CrossOriginFilter.class);
+        cors.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+        cors.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST,PUT,DELETE,OPTIONS");
+        cors.setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM, "Origin,Content-Type,Accept,Authorization");
+        cors.setInitParameter(CrossOriginFilter.ALLOW_CREDENTIALS_PARAM, "true");
+
+        // Terapkan untuk semua endpoint publik
+        servletHandler.addFilter(cors, "/public/*", EnumSet.of(DispatcherType.REQUEST));
+        servletHandler.addFilter(cors, "/public/media/*", EnumSet.of(DispatcherType.REQUEST));
     }
 
     private void initSessionConfig(ServletContextHandler servletHandler) {
