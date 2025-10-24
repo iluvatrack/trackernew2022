@@ -18,7 +18,6 @@ package org.traccar.web;
 import com.google.inject.Injector;
 import com.google.inject.servlet.GuiceFilter;
 import org.eclipse.jetty.http.HttpCookie;
-import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
 import org.eclipse.jetty.server.Request;
@@ -126,7 +125,7 @@ public class WebServer implements LifecycleObject {
                 public void doScope(
                         String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
                         throws IOException, ServletException {
-                    if (target.equals("/") && request.getMethod().equals(HttpMethod.POST.asString())) {
+                    if (target.equals("/") && "POST".equalsIgnoreCase(request.getMethod())) {
                         super.doScope(target, baseRequest, request, response);
                     }
                 }
@@ -171,7 +170,8 @@ public class WebServer implements LifecycleObject {
                 DateParameterConverterProvider.class,
                 SecurityRequestFilter.class,
                 CorsResponseFilter.class,
-                ResourceErrorHandler.class);
+                ResourceErrorHandler.class,
+                org.traccar.api.resource.MediaResource.class);
         resourceConfig.packages(ServerResource.class.getPackage().getName());
         if (resourceConfig.getClasses().stream().filter(ServerResource.class::equals).findAny().isEmpty()) {
             LOGGER.warn("Failed to load API resources");
