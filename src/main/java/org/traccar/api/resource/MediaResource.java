@@ -19,7 +19,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@Path("mediafiles") // hanya "mediafiles", bukan "public/mediafiles"
+/**
+ * Endpoint publik untuk daftar foto dari perangkat.
+ * URL endpoint: /public/mediafiles/{uniqueId}?from=...&to=...
+ * File URL publik: /public/media/{uniqueId}/{fileName}.jpg
+ */
+@Path("mediafiles")
 @Produces(MediaType.APPLICATION_JSON)
 public class MediaResource {
 
@@ -37,27 +42,48 @@ public class MediaResource {
             return Response.ok(Collections.emptyList()).build();
         }
 
+        LocalDateTime fromTime = null;
+        LocalDateTime toTime = null;
+        try {
+            if (from != null && to != null) {
+                fromTime = LocalDateTime.parse(from, DateTimeFormatter.ISO_DATE_TIME);
+                toTime = LocalDateTime.parse(to, DateTimeFormatter.ISO_DATE_TIME);
+            }
+        } catch (Exception ignored) {}
+
         List<Map<String, Object>> photos = new ArrayList<>();
+
         try (DirectoryStream<java.nio.file.Path> stream = Files.newDirectoryStream(deviceFolder, "*.jpg")) {
             for (java.nio.file.Path file : stream) {
-                String name = file.getFileName().toString();
-                String tsRaw = name.replace(".jpg", "");
+                String fileName = file.getFileName().toString();
+                String timestampStr = fileName.replace(".jpg", "");
+
                 LocalDateTime ts;
                 try {
-                    ts = LocalDateTime.parse(tsRaw, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-                } catch (Exception e) { continue; }
+                    ts = LocalDateTime.parse(timestampStr, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+                } catch (Exception e) {
+                    continue;
+                }
 
-                Map<String,Object> item = new LinkedHashMap<>();
-                item.put("fileName", name);
+                if (fromTime != null && toTime != null) {
+                    if (ts.isBefore(fromTime) || ts.isAfter(toTime)) {
+                        continue;
+                    }
+                }
+
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("fileName", fileName);
                 item.put("timestamp", ts.toString());
-                item.put("url", "/api/media/" + uniqueId + "/" + name);
+                // 👉 gunakan URL publik
+                item.put("url", "/public/media/" + uniqueId + "/" + fileName);
                 photos.add(item);
             }
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
         }
 
-        photos.sort((a, b) -> ((String)b.get("timestamp")).compareTo((String)a.get("timestamp")));
+        // Urutkan terbaru → terlama
+        photos.sort((a, b) -> ((String) b.get("timestamp")).compareTo((String) a.get("timestamp")));
         return Response.ok(photos).build();
     }
 }

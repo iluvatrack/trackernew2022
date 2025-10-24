@@ -162,7 +162,14 @@ public class WebServer implements LifecycleObject {
             servletHolder.setInitParameter("pathInfoOnly", "true");
             servletHandler.addServlet(servletHolder, "/api/media/*");
         }
-
+        // === 2️⃣ Endpoint publik baru tanpa login ===
+        if (mediaPath != null) {
+            ServletHolder publicMedia = new ServletHolder(DefaultServlet.class);
+            publicMedia.setInitParameter("resourceBase", new File(mediaPath).getAbsolutePath());
+            publicMedia.setInitParameter("dirAllowed", "false");
+            publicMedia.setInitParameter("pathInfoOnly", "true");
+            servletHandler.addServlet(publicMedia, "/public/media/*"); // ✅ new public endpoint
+        }
         ResourceConfig resourceConfig = new ResourceConfig();
         resourceConfig.registerClasses(
                 JacksonFeature.class,
