@@ -1,5 +1,6 @@
 package org.traccar.api.resource;
 
+import jakarta.annotation.security.PermitAll;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -24,6 +25,7 @@ import java.util.Map;
  * Path endpoint: /api/mediafiles/{uniqueId}?from=...&to=...
  * Tidak membutuhkan login session (tidak difilter oleh MediaFilter)
  */
+@PermitAll
 @Path("mediafiles")
 @Produces(MediaType.APPLICATION_JSON)
 public class MediaResource {
