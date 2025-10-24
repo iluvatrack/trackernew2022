@@ -13,11 +13,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Custom endpoint publik untuk menampilkan daftar foto dari Traccar
@@ -28,7 +24,6 @@ import java.util.Map;
 @Produces(MediaType.APPLICATION_JSON)
 public class MediaResource {
 
-    // Lokasi folder media di server Traccar
     private static final java.nio.file.Path MEDIA_ROOT = java.nio.file.Paths.get("/opt/traccar/media");
 
     @GET
@@ -45,7 +40,6 @@ public class MediaResource {
 
         LocalDateTime fromTime = null;
         LocalDateTime toTime = null;
-
         try {
             if (from != null && to != null) {
                 fromTime = LocalDateTime.parse(from, DateTimeFormatter.ISO_DATE_TIME);
@@ -59,8 +53,6 @@ public class MediaResource {
             for (java.nio.file.Path file : stream) {
                 String fileName = file.getFileName().toString();
                 String timestampStr = fileName.replace(".jpg", "");
-
-                // Format nama file = yyyyMMddHHmmss
                 LocalDateTime ts;
                 try {
                     ts = LocalDateTime.parse(timestampStr, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
@@ -68,7 +60,6 @@ public class MediaResource {
                     continue;
                 }
 
-                // Filter berdasarkan rentang waktu (jika ada)
                 if (fromTime != null && toTime != null) {
                     if (ts.isBefore(fromTime) || ts.isAfter(toTime)) {
                         continue;
@@ -78,7 +69,7 @@ public class MediaResource {
                 Map<String, Object> item = new LinkedHashMap<>();
                 item.put("fileName", fileName);
                 item.put("timestamp", ts.toString());
-                // URL foto tetap memakai endpoint bawaan Traccar (yang difilter)
+                // gunakan endpoint bawaan untuk foto
                 item.put("url", "/api/media/" + uniqueId + "/" + fileName);
                 photos.add(item);
             }
@@ -86,7 +77,6 @@ public class MediaResource {
             return Response.serverError().entity(e.getMessage()).build();
         }
 
-        // Urutkan dari terbaru ke terlama
         photos.sort((a, b) -> ((String) b.get("timestamp")).compareTo((String) a.get("timestamp")));
         return Response.ok(photos).build();
     }

@@ -177,14 +177,16 @@ public class WebServer implements LifecycleObject {
         }
         servletHandler.addServlet(new ServletHolder(new ServletContainer(resourceConfig)), "/api/*");
 
-        // === 3️⃣ Endpoint publik tanpa login untuk MediaResource ===
+        // === 3️⃣ Endpoint publik TANPA LOGIN untuk daftar foto (MediaResource) ===
         ResourceConfig publicApi = new ResourceConfig();
         publicApi.registerClasses(
                 JacksonFeature.class,
                 ObjectMapperContextResolver.class,
                 org.traccar.api.resource.MediaResource.class // hanya MediaResource
         );
-        servletHandler.addServlet(new ServletHolder(new ServletContainer(publicApi)), "/public/mediafiles/*");
+
+        // 👉 Pastikan path servlet publik tidak di bawah "/api"
+        servletHandler.addServlet(new ServletHolder(new ServletContainer(publicApi)), "/public/*");
     }
 
     private void initSessionConfig(ServletContextHandler servletHandler) {
