@@ -13,14 +13,13 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-/**
- * Custom endpoint publik untuk menampilkan daftar foto dari Traccar
- * Path endpoint: /api/mediafiles/{uniqueId}?from=...&to=...
- * Tidak membutuhkan login session (tidak difilter oleh MediaFilter)
- */
-@Path("public/mediafiles")
+@Path("mediafiles") // hanya "mediafiles", bukan "public/mediafiles"
 @Produces(MediaType.APPLICATION_JSON)
 public class MediaResource {
 
@@ -38,46 +37,27 @@ public class MediaResource {
             return Response.ok(Collections.emptyList()).build();
         }
 
-        LocalDateTime fromTime = null;
-        LocalDateTime toTime = null;
-        try {
-            if (from != null && to != null) {
-                fromTime = LocalDateTime.parse(from, DateTimeFormatter.ISO_DATE_TIME);
-                toTime = LocalDateTime.parse(to, DateTimeFormatter.ISO_DATE_TIME);
-            }
-        } catch (Exception ignored) {}
-
         List<Map<String, Object>> photos = new ArrayList<>();
-
         try (DirectoryStream<java.nio.file.Path> stream = Files.newDirectoryStream(deviceFolder, "*.jpg")) {
             for (java.nio.file.Path file : stream) {
-                String fileName = file.getFileName().toString();
-                String timestampStr = fileName.replace(".jpg", "");
+                String name = file.getFileName().toString();
+                String tsRaw = name.replace(".jpg", "");
                 LocalDateTime ts;
                 try {
-                    ts = LocalDateTime.parse(timestampStr, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-                } catch (Exception e) {
-                    continue;
-                }
+                    ts = LocalDateTime.parse(tsRaw, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+                } catch (Exception e) { continue; }
 
-                if (fromTime != null && toTime != null) {
-                    if (ts.isBefore(fromTime) || ts.isAfter(toTime)) {
-                        continue;
-                    }
-                }
-
-                Map<String, Object> item = new LinkedHashMap<>();
-                item.put("fileName", fileName);
+                Map<String,Object> item = new LinkedHashMap<>();
+                item.put("fileName", name);
                 item.put("timestamp", ts.toString());
-                // gunakan endpoint bawaan untuk foto
-                item.put("url", "/api/media/" + uniqueId + "/" + fileName);
+                item.put("url", "/api/media/" + uniqueId + "/" + name);
                 photos.add(item);
             }
         } catch (IOException e) {
             return Response.serverError().entity(e.getMessage()).build();
         }
 
-        photos.sort((a, b) -> ((String) b.get("timestamp")).compareTo((String) a.get("timestamp")));
+        photos.sort((a, b) -> ((String)b.get("timestamp")).compareTo((String)a.get("timestamp")));
         return Response.ok(photos).build();
     }
 }
