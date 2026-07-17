@@ -152,6 +152,10 @@ public class Position extends Message {
     public static final String ALARM_TAMPERING = "tampering";
     public static final String ALARM_REMOVING = "removing";
 
+    // Untuk CARD AVL (Tzone hardware 0x0111)
+    public static final String TOTAL_TAG = "totalTag";
+    public static final String PREFIX_HUMIDITY = "hum";
+
     public Position() {}
 
     public Position(String protocol) {
