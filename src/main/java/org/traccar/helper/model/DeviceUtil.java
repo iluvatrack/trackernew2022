@@ -44,8 +44,7 @@ public final class DeviceUtil {
             Collection<Long> deviceIds, Collection<Long> groupIds) throws StorageException {
 
         var devices = storage.getObjects(Device.class, new Request(
-                new Columns.All(),
-                new Condition.Permission(User.class, userId, Device.class)));
+                new Columns.All()));
 
         if (deviceIds.isEmpty() && groupIds.isEmpty()) {
             return devices;
