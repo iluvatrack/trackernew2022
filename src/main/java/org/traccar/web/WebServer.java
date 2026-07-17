@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocol;
 import org.traccar.LifecycleObject;
 import org.traccar.api.CorsResponseFilter;
+import org.traccar.api.publicendpoint.MediaResource;
 import org.traccar.protocol.OsmAndProtocol;
 import org.traccar.api.DateParameterConverterProvider;
 import org.traccar.api.ResourceErrorHandler;
@@ -169,6 +170,22 @@ public class WebServer implements LifecycleObject {
             servletHolder.setInitParameter("dirAllowed", "false");
             servletHolder.setInitParameter("pathInfoOnly", "true");
             servletHandler.addServlet(servletHolder, "/api/media/*");
+
+            // Endpoint publik tanpa login untuk menampilkan foto kamera
+            MediaResource.setMediaRoot(Path.of(mediaPath));
+            ServletHolder publicMediaHolder = new ServletHolder(ResourceServlet.class);
+            publicMediaHolder.setInitParameter("baseResource", Path.of(mediaPath).toUri().toString());
+            publicMediaHolder.setInitParameter("dirAllowed", "false");
+            publicMediaHolder.setInitParameter("pathInfoOnly", "true");
+            servletHandler.addServlet(publicMediaHolder, "/public/media/*");
+
+            ResourceConfig publicResourceConfig = new ResourceConfig();
+            publicResourceConfig.registerClasses(
+                    JacksonFeature.class,
+                    ObjectMapperContextResolver.class,
+                    CorsResponseFilter.class,
+                    MediaResource.class);
+            servletHandler.addServlet(new ServletHolder(new ServletContainer(publicResourceConfig)), "/public/*");
         }
 
         if (config.getBoolean(Keys.WEB_MCP_ENABLE)) {
